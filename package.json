@@ -1,6 +1,6 @@
 {
   "name": "express-ts-backend-generator",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "commonjs",
   "description": "Powerful CLI tool to scaffold Express TypeScript projects with DDD architecture",
   "keywords": [
