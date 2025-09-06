@@ -1,17 +1,8 @@
 {
   "name": "express-ts-backend-generator",
   "version": "1.0.0",
-  "description": "Angular-like CLI tool to scaffold Express TypeScript projects with DDD architecture",
-  "bin": {
-    "express-ts-backend-generator": "dist/index.js"
-  },
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
-  },
+  "type": "commonjs",
+  "description": "Powerful CLI tool to scaffold Express TypeScript projects with DDD architecture",
   "keywords": [
     "cli",
     "express",
@@ -19,10 +10,42 @@
     "scaffold",
     "generator",
     "ddd",
-    "clean-architecture"
+    "clean-architecture",
+    "backend",
+    "nodejs"
   ],
-  "author": "",
+  "author": "Your Name <your.email@domain.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/express-ts-backend-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/express-ts-backend-generator/issues"
+  },
+  "homepage": "https://github.com/yourusername/express-ts-backend-generator#readme",
+  "bin": {
+    "express-ts-backend-generator": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist/**/*",
+    "templates/**/*",
+    "templates-generators/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npm run build && node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build",
+    "clean": "rimraf dist"
+  },
   "dependencies": {
     "chalk": "^5.6.0",
     "commander": "^11.0.0",
@@ -31,6 +54,7 @@
   "devDependencies": {
     "@types/ejs": "^3.1.0",
     "@types/node": "^20.0.0",
+    "rimraf": "^5.0.10",
     "typescript": "^5.0.0"
   }
 }

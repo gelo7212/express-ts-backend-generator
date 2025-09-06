@@ -38,6 +38,14 @@ export function toDotCase(str) {
     .toLowerCase();
 }
 
+export function lowercase(str) {
+  return str.toLowerCase();
+}
+
+export function uppercase(str) {
+  return str.toUpperCase();
+}
+
 export function createNameVariations(input) {
   return {
     original: input,

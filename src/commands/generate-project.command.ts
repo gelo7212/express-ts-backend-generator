@@ -1,10 +1,9 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { promises as fs } from 'fs';
 import ejs from 'ejs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// In CommonJS, __dirname is available globally
+// const __dirname = path.dirname(__filename);
 
 export async function generateProject(projectName: string) {
   const targetDir = path.resolve(process.cwd(), projectName);

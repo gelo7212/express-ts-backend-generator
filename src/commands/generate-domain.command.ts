@@ -4,9 +4,9 @@ import {
   toKebabCase, 
   lowercase, 
   pluralize 
-} from '../utils/string.utils.js';
-import { generateFromTemplate, generateFromTemplateString } from '../generators/template.generator.js';
-import { directoryExists, fileExists } from '../utils/file.utils.js';
+} from '../utils/string.utils';
+import { generateFromTemplate, generateFromTemplateString } from '../generators/template.generator';
+import { directoryExists, fileExists } from '../utils/file.utils';
 
 interface DomainNames {
   camelCase: string;

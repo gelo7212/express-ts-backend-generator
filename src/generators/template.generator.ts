@@ -1,12 +1,8 @@
 import ejs from 'ejs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { promises as fs } from 'fs';
-import { writeFileWithDir } from '../utils/file.utils.js';
-import { success, error, listItem } from '../utils/logger.utils.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { writeFileWithDir } from '../utils/file.utils';
+import { success, error, listItem } from '../utils/logger.utils';
 
 interface TemplateConfig {
   template: string;

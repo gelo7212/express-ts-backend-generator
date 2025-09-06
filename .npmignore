@@ -1,0 +1,45 @@
+# Source files
+src/
+tsconfig.json
+*.tsbuildinfo
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+test/
+tests/
+**/*.test.ts
+**/*.spec.ts
+coverage/
+
+# Development dependencies
+node_modules/
+.npm/
+.eslintcache
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Build artifacts (keep only dist)
+*.tsbuildinfo

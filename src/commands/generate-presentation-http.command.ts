@@ -4,9 +4,9 @@ import {
   toKebabCase, 
   lowercase,
   pluralize
-} from '../utils/string.utils.js';
-import { generateFromTemplate } from '../generators/template.generator.js';
-import { directoryExists } from '../utils/file.utils.js';
+} from '../utils/string.utils';
+import { generateFromTemplate } from '../generators/template.generator';
+import { directoryExists } from '../utils/file.utils';
 
 export async function generatePresentationHttp(domainName: string) {
   const names = {

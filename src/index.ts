@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { generateProject } from './commands/generate-project.command.js';
-import { generateDomain } from './commands/generate-domain.command.js';
-import { generateUseCase } from './commands/generate-use-case.command.js';
-import { generateController } from './commands/generate-controller.command.js';
-import { generateEntity } from './commands/generate-entity.command.js';
-import { generateValueObject } from './commands/generate-value-object.command.js';
-import { generateRepository } from './commands/generate-repository.command.js';
-import { generateService } from './commands/generate-service.command.js';
-import { generatePresentationHttp } from './commands/generate-presentation-http.command.js';
+import { generateProject } from './commands/generate-project.command';
+import { generateDomain } from './commands/generate-domain.command';
+import { generateUseCase } from './commands/generate-use-case.command';
+import { generateController } from './commands/generate-controller.command';
+import { generateEntity } from './commands/generate-entity.command';
+import { generateValueObject } from './commands/generate-value-object.command';
+import { generateRepository } from './commands/generate-repository.command';
+import { generateService } from './commands/generate-service.command';
+import { generatePresentationHttp } from './commands/generate-presentation-http.command';
 
 const program = new Command();
 

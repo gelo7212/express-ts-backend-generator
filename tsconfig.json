@@ -1,21 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Node",
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "declarationMap": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "allowImportingTsExtensions": false,
-    "noEmit": false
+    "typeRoots": ["node_modules/@types"],
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
     "src/**/*"
@@ -24,6 +25,8 @@
     "node_modules",
     "dist",
     "templates",
-    "templates-generators"
+    "templates-generators",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }
