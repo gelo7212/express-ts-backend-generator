@@ -1,0 +1,36 @@
+{
+  "name": "express-ts-backend-generator",
+  "version": "1.0.0",
+  "description": "Angular-like CLI tool to scaffold Express TypeScript projects with DDD architecture",
+  "bin": {
+    "express-ts-backend-generator": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "cli",
+    "express",
+    "typescript",
+    "scaffold",
+    "generator",
+    "ddd",
+    "clean-architecture"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.6.0",
+    "commander": "^11.0.0",
+    "ejs": "^3.1.9"
+  },
+  "devDependencies": {
+    "@types/ejs": "^3.1.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
