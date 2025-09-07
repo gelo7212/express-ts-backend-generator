@@ -1,0 +1,90 @@
+import { <%= domainNames.pascalCase %> } from '../../../src/domain/<%= domainNames.lowercase %>/entities/<%= domainNames.kebabCase %>.entity';
+
+describe('<%= domainNames.pascalCase %>', () => {
+  describe('constructor', () => {
+    it('should create a valid <%= domainNames.lowercase %>', () => {
+      const props = {
+        name: 'Test <%= domainNames.pascalCase %>',
+        description: 'Test description',
+        isActive: true
+      };
+
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>(props);
+
+      expect(<%= domainNames.camelCase %>.name).toBe(props.name);
+      expect(<%= domainNames.camelCase %>.description).toBe(props.description);
+      expect(<%= domainNames.camelCase %>.isActive).toBe(props.isActive);
+      expect(<%= domainNames.camelCase %>.id).toBeDefined();
+    });
+
+    it('should set default values correctly', () => {
+      const props = {
+        name: 'Test <%= domainNames.pascalCase %>',
+        isActive: true
+      };
+
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>(props);
+
+      expect(<%= domainNames.camelCase %>.description).toBeUndefined();
+      expect(<%= domainNames.camelCase %>.createdAt).toBeInstanceOf(Date);
+      expect(<%= domainNames.camelCase %>.updatedAt).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('updateName', () => {
+    it('should update the name', () => {
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>({
+        name: 'Original Name',
+        isActive: true
+      });
+
+      <%= domainNames.camelCase %>.updateName('New Name');
+
+      expect(<%= domainNames.camelCase %>.name).toBe('New Name');
+    });
+  });
+
+  describe('activate/deactivate', () => {
+    it('should activate the <%= domainNames.lowercase %>', () => {
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>({
+        name: 'Test <%= domainNames.pascalCase %>',
+        isActive: false
+      });
+
+      <%= domainNames.camelCase %>.activate();
+
+      expect(<%= domainNames.camelCase %>.isActive).toBe(true);
+    });
+
+    it('should deactivate the <%= domainNames.lowercase %>', () => {
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>({
+        name: 'Test <%= domainNames.pascalCase %>',
+        isActive: true
+      });
+
+      <%= domainNames.camelCase %>.deactivate();
+
+      expect(<%= domainNames.camelCase %>.isActive).toBe(false);
+    });
+  });
+
+  describe('toJSON', () => {
+    it('should return correct JSON representation', () => {
+      const props = {
+        name: 'Test <%= domainNames.pascalCase %>',
+        description: 'Test description',
+        isActive: true
+      };
+
+      const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>(props);
+      const json = <%= domainNames.camelCase %>.toJSON();
+
+      expect(json.id).toBe(<%= domainNames.camelCase %>.id);
+      expect(json.name).toBe(props.name);
+      expect(json.description).toBe(props.description);
+      expect(json.isActive).toBe(props.isActive);
+      expect(json.createdAt).toBeInstanceOf(Date);
+      expect(json.updatedAt).toBeInstanceOf(Date);
+    });
+  });
+});

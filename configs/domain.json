@@ -1,0 +1,115 @@
+{
+  "name": "domain-generator",
+  "type": "domain",
+  "templates": [
+    {
+      "name": "domain-entity",
+      "path": "domain/entity.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/entities/{domainNames.kebabCase}.entity.ts"
+    },
+    {
+      "name": "domain-event-created",
+      "path": "domain/event-created.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/events/{domainNames.kebabCase}-created.event.ts"
+    },
+    {
+      "name": "domain-event-updated",
+      "path": "domain/event-updated.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/events/{domainNames.kebabCase}-updated.event.ts"
+    },
+    {
+      "name": "domain-repository-interface",
+      "path": "domain/repository.interface.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/repositories/{domainNames.kebabCase}.repository.interface.ts"
+    },
+    {
+      "name": "domain-service",
+      "path": "domain/service.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/services/{domainNames.kebabCase}.service.ts"
+    },
+    {
+      "name": "domain-domain-service",
+      "path": "domain/domain-service.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/services/{domainNames.kebabCase}-domain.service.ts"
+    },
+    {
+      "name": "application-dto",
+      "path": "application/dto.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/dto/{domainNames.kebabCase}.dto.ts"
+    },
+    {
+      "name": "application-service",
+      "path": "application/application-service.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/services/{domainNames.kebabCase}-application.service.ts"
+    },
+    {
+      "name": "use-case-create",
+      "path": "application/create-use-case.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/use-cases/{domainNames.lowercase}/create-{domainNames.kebabCase}.use-case.ts"
+    },
+    {
+      "name": "use-case-get",
+      "path": "application/get-use-case.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/use-cases/{domainNames.lowercase}/get-{domainNames.kebabCase}.use-case.ts"
+    },
+    {
+      "name": "use-case-update",
+      "path": "application/update-use-case.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/use-cases/{domainNames.lowercase}/update-{domainNames.kebabCase}.use-case.ts"
+    },
+    {
+      "name": "use-case-delete",
+      "path": "application/delete-use-case.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/use-cases/{domainNames.lowercase}/delete-{domainNames.kebabCase}.use-case.ts"
+    },
+    {
+      "name": "infrastructure-repository",
+      "path": "infrastructure/repository.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/repositories/{domainNames.kebabCase}.repository.ts"
+    },
+    {
+      "name": "presentation-controller",
+      "path": "presentation/controller.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/controllers/{domainNames.kebabCase}.controller.ts"
+    },
+    {
+      "name": "presentation-dto",
+      "path": "presentation/http-dto.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/dto/{domainNames.kebabCase}.dto.ts"
+    },
+    {
+      "name": "presentation-routes",
+      "path": "presentation/routes.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/routes/{domainNames.kebabCase}.routes.ts"
+    },
+    {
+      "name": "domain-tests",
+      "path": "tests/domain.spec.ts.ejs",
+      "type": "file",
+      "outputPath": "test/unit/domain/{domainNames.kebabCase}.entity.spec.ts",
+      "conditions": [
+        {
+          "field": "skipTests",
+          "operator": "not-equals",
+          "value": true
+        }
+      ]
+    }
+  ]
+}

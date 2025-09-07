@@ -1,0 +1,11 @@
+import { DomainEvent } from '../../shared/domain-event';
+
+export class <%= domainNames.pascalCase %>UpdatedEvent extends DomainEvent {
+  constructor(
+    public readonly <%= domainNames.camelCase %>Id: string,
+    public readonly field: string,
+    public readonly newValue: any
+  ) {
+    super('<%= domainNames.pascalCase %>Updated');
+  }
+}

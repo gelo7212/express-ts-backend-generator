@@ -1,0 +1,43 @@
+{
+  "name": "project-generator",
+  "type": "project",
+  "templates": [
+    {
+      "name": "package.json",
+      "path": "project/package.json.ejs",
+      "type": "file",
+      "outputPath": "package.json"
+    },
+    {
+      "name": "tsconfig.json",
+      "path": "project/tsconfig.json",
+      "type": "file", 
+      "outputPath": "tsconfig.json"
+    },
+    {
+      "name": "README.md",
+      "path": "project/README.md.ejs",
+      "type": "file",
+      "outputPath": "README.md"
+    },
+    {
+      "name": "src-structure",
+      "path": "project/src",
+      "type": "directory",
+      "outputPath": "src"
+    },
+    {
+      "name": "docker-files",
+      "path": "project/docker",
+      "type": "directory",
+      "outputPath": ".",
+      "conditions": [
+        {
+          "field": "includeDocker",
+          "operator": "equals",
+          "value": true
+        }
+      ]
+    }
+  ]
+}

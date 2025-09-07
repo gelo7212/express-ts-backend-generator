@@ -1,0 +1,12 @@
+{
+  "name": "value-object-generator",
+  "type": "value-object",
+  "templates": [
+    {
+      "name": "domain-value-object",
+      "path": "domain/value-object.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/value-objects/{voNames.kebabCase}.ts"
+    }
+  ]
+}

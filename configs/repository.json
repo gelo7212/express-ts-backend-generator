@@ -1,0 +1,18 @@
+{
+  "name": "repository-generator",
+  "type": "repository",
+  "templates": [
+    {
+      "name": "domain-repository-interface",
+      "path": "domain/repository.interface.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/repositories/{domainNames.kebabCase}.repository.interface.ts"
+    },
+    {
+      "name": "infrastructure-repository",
+      "path": "infrastructure/repository.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/repositories/{domainNames.kebabCase}.repository.ts"
+    }
+  ]
+}

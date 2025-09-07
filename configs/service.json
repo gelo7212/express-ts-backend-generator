@@ -1,0 +1,18 @@
+{
+  "name": "service-generator",
+  "type": "service",
+  "templates": [
+    {
+      "name": "domain-service",
+      "path": "domain/service.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/services/{domainNames.kebabCase}.service.ts"
+    },
+    {
+      "name": "domain-domain-service",
+      "path": "domain/domain-service.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/services/{domainNames.kebabCase}-domain.service.ts"
+    }
+  ]
+}

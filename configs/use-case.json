@@ -1,0 +1,12 @@
+{
+  "name": "use-case-generator",
+  "type": "use-case",
+  "templates": [
+    {
+      "name": "application-use-case",
+      "path": "application/custom-use-case.ts.ejs",
+      "type": "file",
+      "outputPath": "src/application/use-cases/{domainNames.lowercase}/{useCaseNames.kebabCase}.use-case.ts"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../infrastructure/types';
+import { I<%= domainNames.pascalCase %>Repository } from '../repositories/<%= domainNames.kebabCase %>.repository.interface';
+import { <%= domainNames.pascalCase %> } from '../entities/<%= domainNames.kebabCase %>.entity';
+
+@injectable()
+export class <%= domainNames.pascalCase %>DomainService {
+  constructor(
+    @inject(TYPES.<%= domainNames.pascalCase %>Repository) private <%= domainNames.camelCase %>Repository: I<%= domainNames.pascalCase %>Repository
+  ) {}
+
+  async validateUniqueName(name: string, excludeId?: string): Promise<boolean> {
+    const existing<%= domainNames.pascalCase %> = await this.<%= domainNames.camelCase %>Repository.findByName(name);
+    return !existing<%= domainNames.pascalCase %> || existing<%= domainNames.pascalCase %>.id === excludeId;
+  }
+
+  async canDelete(id: string): Promise<boolean> {
+    const <%= domainNames.camelCase %> = await this.<%= domainNames.camelCase %>Repository.findById(id);
+    if (!<%= domainNames.camelCase %>) {
+      return false;
+    }
+    
+    // Add business logic for deletion validation
+    // For example, check if <%= domainNames.camelCase %> has dependencies
+    return true;
+  }
+
+  async getActive<%= domainNames.pluralPascalCase %>(): Promise<<%= domainNames.pascalCase %>[]> {
+    return this.<%= domainNames.camelCase %>Repository.findByStatus(true);
+  }
+}

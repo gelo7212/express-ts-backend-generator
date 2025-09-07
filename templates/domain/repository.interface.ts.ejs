@@ -1,0 +1,11 @@
+import { <%= domainNames.pascalCase %> } from '../entities/<%= domainNames.kebabCase %>.entity';
+
+export interface I<%= domainNames.pascalCase %>Repository {
+  findById(id: string): Promise<<%= domainNames.pascalCase %> | null>;
+  findAll(): Promise<<%= domainNames.pascalCase %>[]>;
+  save(<%= domainNames.camelCase %>: <%= domainNames.pascalCase %>): Promise<void>;
+  update(<%= domainNames.camelCase %>: <%= domainNames.pascalCase %>): Promise<void>;
+  delete(id: string): Promise<void>;
+  findByName(name: string): Promise<<%= domainNames.pascalCase %> | null>;
+  findByStatus(isActive: boolean): Promise<<%= domainNames.pascalCase %>[]>;
+}

@@ -1,0 +1,9 @@
+import { ValueObject } from '../../shared/value-object';
+
+export class <%= voNames.pascalCase %> extends ValueObject<string> {
+  protected validate(): void {
+    if (!this._value || this._value.trim().length === 0) {
+      throw new Error('<%= voNames.pascalCase %> cannot be empty');
+    }
+  }
+}

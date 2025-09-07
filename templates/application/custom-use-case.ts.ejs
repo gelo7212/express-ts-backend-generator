@@ -1,0 +1,31 @@
+import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../infrastructure/types';
+import { I<%= domainNames.pascalCase %>Repository } from '../../../domain/<%= domainNames.lowercase %>/repositories/<%= domainNames.kebabCase %>.repository.interface';
+import { <%= domainNames.pascalCase %> } from '../../../domain/<%= domainNames.lowercase %>/entities/<%= domainNames.kebabCase %>.entity';
+import { <%= domainNames.pascalCase %>Response } from '../../dto/<%= domainNames.kebabCase %>.dto';
+
+@injectable()
+export class <%= useCaseNames.pascalCase %>UseCase {
+  constructor(
+    @inject(TYPES.<%= domainNames.pascalCase %>Repository) private <%= domainNames.camelCase %>Repository: I<%= domainNames.pascalCase %>Repository
+  ) {}
+
+  async execute(id: string): Promise<<%= domainNames.pascalCase %>Response | null> {
+    const <%= domainNames.camelCase %> = await this.<%= domainNames.camelCase %>Repository.findById(id);
+    
+    if (!<%= domainNames.camelCase %>) {
+      return null;
+    }
+
+    // Custom business logic for <%= useCaseNames.camelCase %> goes here
+    
+    return {
+      id: <%= domainNames.camelCase %>.id,
+      name: <%= domainNames.camelCase %>.name,<% if (domainNames.lowercase === 'user') { %>
+      email: <%= domainNames.camelCase %>.email.value,<% } %>
+      isActive: <%= domainNames.camelCase %>.isActive,
+      createdAt: <%= domainNames.camelCase %>.createdAt,
+      updatedAt: <%= domainNames.camelCase %>.updatedAt
+    };
+  }
+}

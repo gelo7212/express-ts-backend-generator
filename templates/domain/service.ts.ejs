@@ -1,0 +1,33 @@
+import { <%= domainNames.pascalCase %> } from '../entities/<%= domainNames.kebabCase %>.entity';
+import { I<%= domainNames.pascalCase %>Repository } from '../repositories/<%= domainNames.kebabCase %>.repository.interface';
+
+export class <%= domainNames.pascalCase %>Service {
+  constructor(
+    private readonly <%= domainNames.camelCase %>Repository: I<%= domainNames.pascalCase %>Repository
+  ) {}
+
+  async validate<%= domainNames.pascalCase %>Data(data: any): Promise<void> {
+    if (!data.name || data.name.trim().length === 0) {
+      throw new Error('<%= domainNames.pascalCase %> name is required');
+    }
+
+    // Check for duplicates
+    const existing = await this.<%= domainNames.camelCase %>Repository.findByName(data.name);
+    if (existing) {
+      throw new Error(`<%= domainNames.pascalCase %> with name "${data.name}" already exists`);
+    }
+  }
+
+  async businessLogicFor<%= domainNames.pascalCase %>Creation(data: any): Promise<void> {
+    // Add any business logic specific to <%= domainNames.lowercase %> creation
+    await this.validate<%= domainNames.pascalCase %>Data(data);
+  }
+
+  async businessLogicFor<%= domainNames.pascalCase %>Update(id: string, data: any): Promise<void> {
+    // Add any business logic specific to <%= domainNames.lowercase %> updates
+    const existing = await this.<%= domainNames.camelCase %>Repository.findById(id);
+    if (!existing) {
+      throw new Error('<%= domainNames.pascalCase %> not found');
+    }
+  }
+}

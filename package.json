@@ -1,8 +1,8 @@
 {
-  "name": "express-ts-backend-generator",
-  "version": "1.1.0",
+  "name": "express-ts-backend-generator-v2",
+  "version": "2.0.0",
   "type": "commonjs",
-  "description": "Powerful CLI tool to scaffold Express TypeScript projects with DDD architecture",
+  "description": "Clean, maintainable CLI tool to scaffold Express TypeScript projects with DDD architecture",
   "keywords": [
     "cli",
     "express",
@@ -25,13 +25,12 @@
   },
   "homepage": "https://github.com/gelo7212/express-ts-backend-generator#readme",
   "bin": {
-    "express-ts-backend-generator": "./dist/index.js"
+    "express-ts-gen": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
     "dist/**/*",
     "templates/**/*",
-    "templates-generators/**/*",
     "README.md",
     "LICENSE"
   ],
@@ -42,19 +41,29 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "npm run build && node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "prepublishOnly": "npm run build",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "chalk": "^5.6.0",
     "commander": "^11.0.0",
-    "ejs": "^3.1.9"
+    "ejs": "^3.1.9",
+    "inquirer": "^9.2.8",
+    "ora": "^7.0.1",
+    "pluralize": "^8.0.0"
   },
   "devDependencies": {
-    "@types/ejs": "^3.1.0",
-    "@types/node": "^20.0.0",
-    "rimraf": "^5.0.10",
-    "typescript": "^5.0.0"
+    "@types/ejs": "^3.1.2",
+    "@types/inquirer": "^9.0.3",
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.5.0",
+    "@types/pluralize": "^0.0.30",
+    "jest": "^29.6.2",
+    "rimraf": "^5.0.1",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.1.6"
   }
 }

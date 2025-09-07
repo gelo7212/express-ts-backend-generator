@@ -1,0 +1,28 @@
+import { Router } from 'express';
+import { container } from '../../../infrastructure/container';
+import { TYPES } from '../../../infrastructure/types';
+import { <%= domainNames.pascalCase %>Controller } from '../controllers/<%= domainNames.kebabCase %>.controller';
+import { validationMiddleware } from '../middleware/validation.middleware';
+import { Create<%= domainNames.pascalCase %>Dto, Update<%= domainNames.pascalCase %>Dto } from '../dto/<%= domainNames.kebabCase %>.dto';
+
+const router = Router();
+const <%= domainNames.camelCase %>Controller = container.get<<%= domainNames.pascalCase %>Controller>(TYPES.<%= domainNames.pascalCase %>Controller);
+
+// Routes
+router.post('/<%= domainNames.pluralKebabCase %>', 
+  validationMiddleware(Create<%= domainNames.pascalCase %>Dto),
+  <%= domainNames.camelCase %>Controller.create<%= domainNames.pascalCase %>
+);
+
+router.get('/<%= domainNames.pluralKebabCase %>', <%= domainNames.camelCase %>Controller.getAll<%= domainNames.pascalCase %>s);
+
+router.get('/<%= domainNames.pluralKebabCase %>/:id', <%= domainNames.camelCase %>Controller.get<%= domainNames.pascalCase %>ById);
+
+router.put('/<%= domainNames.pluralKebabCase %>/:id', 
+  validationMiddleware(Update<%= domainNames.pascalCase %>Dto),
+  <%= domainNames.camelCase %>Controller.update<%= domainNames.pascalCase %>
+);
+
+router.delete('/<%= domainNames.pluralKebabCase %>/:id', <%= domainNames.camelCase %>Controller.delete<%= domainNames.pascalCase %>);
+
+export default router;

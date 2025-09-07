@@ -1,0 +1,24 @@
+{
+  "name": "presentation-http-generator",
+  "type": "presentation-http",
+  "templates": [
+    {
+      "name": "presentation-controller",
+      "path": "presentation/controller.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/controllers/{domainNames.kebabCase}.controller.ts"
+    },
+    {
+      "name": "presentation-dto",
+      "path": "presentation/http-dto.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/dto/{domainNames.kebabCase}.dto.ts"
+    },
+    {
+      "name": "presentation-routes",
+      "path": "presentation/routes.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/routes/{domainNames.kebabCase}.routes.ts"
+    }
+  ]
+}

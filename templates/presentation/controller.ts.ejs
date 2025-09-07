@@ -1,0 +1,131 @@
+import { injectable, inject } from 'inversify';
+import { Request, Response } from 'express';
+import { TYPES } from '../../../infrastructure/types';
+import { <%= domainNames.pascalCase %>ApplicationService } from '../../../application/services/<%= domainNames.kebabCase %>-application.service';
+import { Create<%= domainNames.pascalCase %>Dto, Update<%= domainNames.pascalCase %>Dto } from '../dto/<%= domainNames.kebabCase %>.dto';
+
+@injectable()
+export class <%= domainNames.pascalCase %>Controller {
+  constructor(
+    @inject(TYPES.<%= domainNames.pascalCase %>ApplicationService) 
+    private <%= domainNames.camelCase %>ApplicationService: <%= domainNames.pascalCase %>ApplicationService
+  ) {}
+
+  create<%= domainNames.pascalCase %> = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const create<%= domainNames.pascalCase %>Dto = req.body as Create<%= domainNames.pascalCase %>Dto;
+      const <%= domainNames.camelCase %> = await this.<%= domainNames.camelCase %>ApplicationService.create<%= domainNames.pascalCase %>({
+        name: create<%= domainNames.pascalCase %>Dto.name
+      });
+
+      res.status(201).json({
+        success: true,
+        data: <%= domainNames.camelCase %>,
+        message: '<%= domainNames.pascalCase %> created successfully'
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  get<%= domainNames.pascalCase %>ById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const <%= domainNames.camelCase %> = await this.<%= domainNames.camelCase %>ApplicationService.get<%= domainNames.pascalCase %>ById(id);
+
+      if (!<%= domainNames.camelCase %>) {
+        res.status(404).json({
+          success: false,
+          message: '<%= domainNames.pascalCase %> not found'
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: <%= domainNames.camelCase %>
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  getAll<%= domainNames.pascalCase %>s = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const <%= domainNames.pluralCamelCase %> = await this.<%= domainNames.camelCase %>ApplicationService.getAll<%= domainNames.pascalCase %>s();
+      
+      res.json({
+        success: true,
+        data: <%= domainNames.pluralCamelCase %>,
+        count: <%= domainNames.pluralCamelCase %>.length
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  update<%= domainNames.pascalCase %> = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const update<%= domainNames.pascalCase %>Dto = req.body as Update<%= domainNames.pascalCase %>Dto;
+      
+      const <%= domainNames.camelCase %> = await this.<%= domainNames.camelCase %>ApplicationService.update<%= domainNames.pascalCase %>(id, {
+        name: update<%= domainNames.pascalCase %>Dto.name,
+        isActive: update<%= domainNames.pascalCase %>Dto.isActive
+      });
+
+      if (!<%= domainNames.camelCase %>) {
+        res.status(404).json({
+          success: false,
+          message: '<%= domainNames.pascalCase %> not found'
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: <%= domainNames.camelCase %>,
+        message: '<%= domainNames.pascalCase %> updated successfully'
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  delete<%= domainNames.pascalCase %> = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const deleted = await this.<%= domainNames.camelCase %>ApplicationService.delete<%= domainNames.pascalCase %>(id);
+
+      if (!deleted) {
+        res.status(404).json({
+          success: false,
+          message: '<%= domainNames.pascalCase %> not found'
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: '<%= domainNames.pascalCase %> deleted successfully'
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+}

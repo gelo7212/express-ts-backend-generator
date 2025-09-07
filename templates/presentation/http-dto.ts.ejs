@@ -1,0 +1,30 @@
+import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+
+export class Create<%= domainNames.pascalCase %>Dto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class Update<%= domainNames.pascalCase %>Dto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

@@ -1,0 +1,34 @@
+import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../infrastructure/types';
+import { I<%= domainNames.pascalCase %>Repository } from '../../../domain/<%= domainNames.lowercase %>/repositories/<%= domainNames.kebabCase %>.repository.interface';
+import { <%= domainNames.pascalCase %> } from '../../../domain/<%= domainNames.lowercase %>/entities/<%= domainNames.kebabCase %>.entity';
+import { Create<%= domainNames.pascalCase %>Request, <%= domainNames.pascalCase %>Response } from '../../dto/<%= domainNames.kebabCase %>.dto';
+import { <%= domainNames.pascalCase %>DomainService } from '../../../domain/<%= domainNames.lowercase %>/services/<%= domainNames.kebabCase %>-domain.service';
+
+@injectable()
+export class Create<%= domainNames.pascalCase %>UseCase {
+  constructor(
+    @inject(TYPES.<%= domainNames.pascalCase %>Repository) private <%= domainNames.camelCase %>Repository: I<%= domainNames.pascalCase %>Repository,
+    @inject(TYPES.<%= domainNames.pascalCase %>DomainService) private <%= domainNames.camelCase %>DomainService: <%= domainNames.pascalCase %>DomainService
+  ) {}
+
+  async execute(request: Create<%= domainNames.pascalCase %>Request): Promise<<%= domainNames.pascalCase %>Response> {
+    // Validate business rules
+    const isNameUnique = await this.<%= domainNames.camelCase %>DomainService.validateUniqueName(request.name);
+    if (!isNameUnique) {
+      throw new Error('<%= domainNames.pascalCase %> with this name already exists');
+    }
+
+    // Create <%= domainNames.camelCase %> entity
+    const <%= domainNames.camelCase %> = new <%= domainNames.pascalCase %>({
+      name: request.name,
+      description: request.description,
+      isActive: request.isActive ?? true
+    });
+
+    // Save to repository
+    await this.<%= domainNames.camelCase %>Repository.save(<%= domainNames.camelCase %>);
+
+    return <%= domainNames.camelCase %>.toJSON();
+  }
+}

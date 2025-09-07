@@ -1,0 +1,12 @@
+{
+  "name": "controller-generator",
+  "type": "controller",
+  "templates": [
+    {
+      "name": "presentation-controller",
+      "path": "presentation/controller.ts.ejs",
+      "type": "file",
+      "outputPath": "src/presentation/http/controllers/{domainNames.kebabCase}.controller.ts"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "entity-generator",
+  "type": "entity",
+  "templates": [
+    {
+      "name": "domain-entity",
+      "path": "domain/entity.ts.ejs",
+      "type": "file",
+      "outputPath": "src/domain/{domainNames.lowercase}/entities/{entityNames.kebabCase}.entity.ts"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+# <%= projectName %>
+
+Express TypeScript project with Domain-Driven Design (DDD) architecture.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 16.0.0
+- npm or yarn
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+### Building
+
+```bash
+npm run build
+```
+
+### Testing
+
+```bash
+npm test
+```
+
+## Project Structure
+
+```
+src/
+├── application/          # Application layer (Use cases, DTOs)
+│   ├── dto/
+│   ├── services/
+│   └── use-cases/
+├── domain/               # Domain layer (Entities, Value Objects, Domain Services)
+│   └── shared/
+├── infrastructure/       # Infrastructure layer (Repositories, External Services)
+│   ├── container.ts
+│   ├── repositories/
+│   └── types.ts
+└── presentation/         # Presentation layer (Controllers, Routes, Middleware)
+    └── http/
+        ├── controllers/
+        ├── dto/
+        ├── middleware/
+        └── routes/
+```
+
+## Architecture
+
+This project follows Domain-Driven Design (DDD) principles:
+
+- **Domain Layer**: Contains business logic, entities, and domain services
+- **Application Layer**: Contains use cases and application services
+- **Infrastructure Layer**: Contains data access, external services, and technical concerns
+- **Presentation Layer**: Contains controllers, routes, and HTTP-specific logic
+
+## License
+
+MIT

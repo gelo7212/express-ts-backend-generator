@@ -1,0 +1,47 @@
+import { injectable } from 'inversify';
+import { I<%= domainNames.pascalCase %>Repository } from '../../domain/<%= domainNames.lowercase %>/repositories/<%= domainNames.kebabCase %>.repository.interface';
+import { <%= domainNames.pascalCase %> } from '../../domain/<%= domainNames.lowercase %>/entities/<%= domainNames.kebabCase %>.entity';
+
+@injectable()
+export class <%= domainNames.pascalCase %>Repository implements I<%= domainNames.pascalCase %>Repository {
+  private <%= domainNames.pluralCamelCase %>: Map<string, <%= domainNames.pascalCase %>> = new Map();
+
+  async findById(id: string): Promise<<%= domainNames.pascalCase %> | null> {
+    return this.<%= domainNames.pluralCamelCase %>.get(id) || null;
+  }
+
+  async findAll(): Promise<<%= domainNames.pascalCase %>[]> {
+    return Array.from(this.<%= domainNames.pluralCamelCase %>.values());
+  }
+
+  async save(<%= domainNames.camelCase %>: <%= domainNames.pascalCase %>): Promise<void> {
+    this.<%= domainNames.pluralCamelCase %>.set(<%= domainNames.camelCase %>.id, <%= domainNames.camelCase %>);
+  }
+
+  async update(<%= domainNames.camelCase %>: <%= domainNames.pascalCase %>): Promise<void> {
+    if (this.<%= domainNames.pluralCamelCase %>.has(<%= domainNames.camelCase %>.id)) {
+      this.<%= domainNames.pluralCamelCase %>.set(<%= domainNames.camelCase %>.id, <%= domainNames.camelCase %>);
+    } else {
+      throw new Error('<%= domainNames.pascalCase %> not found');
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    if (!this.<%= domainNames.pluralCamelCase %>.delete(id)) {
+      throw new Error('<%= domainNames.pascalCase %> not found');
+    }
+  }
+
+  async findByName(name: string): Promise<<%= domainNames.pascalCase %> | null> {
+    for (const <%= domainNames.camelCase %> of this.<%= domainNames.pluralCamelCase %>.values()) {
+      if (<%= domainNames.camelCase %>.name === name) {
+        return <%= domainNames.camelCase %>;
+      }
+    }
+    return null;
+  }
+
+  async findByStatus(isActive: boolean): Promise<<%= domainNames.pascalCase %>[]> {
+    return Array.from(this.<%= domainNames.pluralCamelCase %>.values()).filter(<%= domainNames.camelCase %> => <%= domainNames.camelCase %>.isActive === isActive);
+  }
+}

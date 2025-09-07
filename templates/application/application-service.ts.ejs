@@ -1,0 +1,48 @@
+import { injectable, inject } from 'inversify';
+import { TYPES } from '../../infrastructure/types';
+import { Create<%= domainNames.pascalCase %>UseCase } from '../use-cases/<%= domainNames.lowercase %>/create-<%= domainNames.kebabCase %>.use-case';
+import { Get<%= domainNames.pascalCase %>UseCase } from '../use-cases/<%= domainNames.lowercase %>/get-<%= domainNames.kebabCase %>.use-case';
+import { Update<%= domainNames.pascalCase %>UseCase } from '../use-cases/<%= domainNames.lowercase %>/update-<%= domainNames.kebabCase %>.use-case';
+import { Delete<%= domainNames.pascalCase %>UseCase } from '../use-cases/<%= domainNames.lowercase %>/delete-<%= domainNames.kebabCase %>.use-case';
+import { <%= domainNames.pascalCase %>Response } from '../dto/<%= domainNames.kebabCase %>.dto';
+
+export interface Create<%= domainNames.pascalCase %>Data {
+  name: string;
+  isActive?: boolean;
+}
+
+export interface Update<%= domainNames.pascalCase %>Data {
+  name?: string;
+  isActive?: boolean;
+}
+
+@injectable()
+export class <%= domainNames.pascalCase %>ApplicationService {
+  constructor(
+    @inject(TYPES.Create<%= domainNames.pascalCase %>UseCase) private create<%= domainNames.pascalCase %>UseCase: Create<%= domainNames.pascalCase %>UseCase,
+    @inject(TYPES.Get<%= domainNames.pascalCase %>UseCase) private get<%= domainNames.pascalCase %>UseCase: Get<%= domainNames.pascalCase %>UseCase,
+    @inject(TYPES.Update<%= domainNames.pascalCase %>UseCase) private update<%= domainNames.pascalCase %>UseCase: Update<%= domainNames.pascalCase %>UseCase,
+    @inject(TYPES.Delete<%= domainNames.pascalCase %>UseCase) private delete<%= domainNames.pascalCase %>UseCase: Delete<%= domainNames.pascalCase %>UseCase
+  ) {}
+
+  async create<%= domainNames.pascalCase %>(data: Create<%= domainNames.pascalCase %>Data): Promise<<%= domainNames.pascalCase %>Response> {
+    return this.create<%= domainNames.pascalCase %>UseCase.execute(data);
+  }
+
+  async get<%= domainNames.pascalCase %>ById(id: string): Promise<<%= domainNames.pascalCase %>Response | null> {
+    return this.get<%= domainNames.pascalCase %>UseCase.execute(id);
+  }
+
+  async getAll<%= domainNames.pascalCase %>s(): Promise<<%= domainNames.pascalCase %>Response[]> {
+    return this.get<%= domainNames.pascalCase %>UseCase.executeAll();
+  }
+
+  async update<%= domainNames.pascalCase %>(id: string, data: Update<%= domainNames.pascalCase %>Data): Promise<<%= domainNames.pascalCase %>Response | null> {
+    return this.update<%= domainNames.pascalCase %>UseCase.execute(id, data);
+  }
+
+  async delete<%= domainNames.pascalCase %>(id: string): Promise<boolean> {
+    await this.delete<%= domainNames.pascalCase %>UseCase.execute(id);
+    return true;
+  }
+}
