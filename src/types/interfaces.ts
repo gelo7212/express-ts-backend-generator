@@ -134,7 +134,6 @@ export type GeneratorType =
   | 'controller'
   | 'dto'
   | 'presentation-http'
-  | 'mongodb-schema'
   | 'mongodb-lazy';
 
 export interface NamingConventions {

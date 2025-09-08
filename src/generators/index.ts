@@ -9,5 +9,4 @@ export * from './repository-generator';
 export * from './service-generator';
 export * from './value-object-generator';
 export * from './presentation-http-generator';
-export * from './mongodb-schema-generator';
 export * from './mongodb-lazy-generator';
