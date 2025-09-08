@@ -2,9 +2,9 @@ import 'reflect-metadata';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import app from './app';
-import { container } from './infrastructure/container';
-import { TYPES, ILogger } from './infrastructure/types';
-import { UserRepository } from './infrastructure/repositories/user.repository';
+import { container } from '../../infrastructure/container';
+import { TYPES, ILogger } from '../../infrastructure/types';
+import { UserRepository } from '../../infrastructure/repositories/user.repository';
 
 // Load environment variables
 dotenv.config();

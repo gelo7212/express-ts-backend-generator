@@ -1,6 +1,7 @@
 import { BaseGenerator } from './base-generator';
 import { GenerationContext, IFileSystem, ILogger, ITemplateEngine } from '../types';
 import { ITemplateRegistry } from '../templates';
+import { ContainerManager } from '../core/container-manager';
 
 /**
  * Generator for creating domain structures
@@ -49,13 +50,112 @@ export class DomainGenerator extends BaseGenerator {
     // Generate all domain files first
     const result = await super.generate(context);
     
-    // If generation was successful, update the TYPES file
+    // If generation was successful, use ContainerManager for complete auto-updates
     if (result.success) {
-      await this.updateTypesFile(context);
-      result.generatedFiles.push('src/infrastructure/types.ts (updated)');
+      try {
+        // Create ContainerManager instance
+        const containerManager = new ContainerManager(this.fileSystem, this.logger);
+        await containerManager.updateContainerWithDomain(context.templateData.domainNames);
+        await containerManager.updateTypesWithDomain(context.templateData.domainNames);
+        result.generatedFiles.push('src/infrastructure/types.ts (auto-updated)');
+        result.generatedFiles.push('src/infrastructure/container.ts (auto-updated)');
+        
+        // If HTTP presentation layer was generated, update route registry
+        const httpControllerPath = this.fileSystem.joinPath(
+          context.projectPath,
+          'src',
+          'presentation',
+          'http',
+          'controllers',
+          `${context.domainName.toLowerCase()}.controller.ts`
+        );
+        
+        if (await this.fileSystem.exists(httpControllerPath)) {
+          await this.updateRouteRegistry(context);
+          result.generatedFiles.push('src/presentation/http/routes/index.ts (auto-updated)');
+        }
+        
+      } catch (error: any) {
+        this.logger.warning(`Auto-update failed: ${error.message}`);
+        // Fallback to old method
+        await this.updateTypesFile(context);
+        result.generatedFiles.push('src/infrastructure/types.ts (updated)');
+      }
     }
     
     return result;
+  }
+
+  /**
+   * Update the route registry with new domain routes
+   */
+  private async updateRouteRegistry(context: GenerationContext): Promise<void> {
+    const { domainNames } = context.templateData;
+    const routeIndexPath = 'src/presentation/http/routes/index.ts';
+    
+    try {
+      // Check if route registry exists, if not create it
+      if (!await this.fileSystem.exists(routeIndexPath)) {
+        this.logger.info('Creating route registry index file...');
+        const initialContent = await this.templateEngine.renderFile('presentation/route-index.ts.ejs', {});
+        await this.fileSystem.writeFile(routeIndexPath, initialContent);
+      }
+
+      // Read existing content
+      const existingContent = await this.fileSystem.readFile(routeIndexPath);
+      
+      // Check if route is already registered
+      const routeImportPattern = new RegExp(`import ${domainNames.camelCase}Routes from './${domainNames.kebabCase}.routes';`, 'g');
+      const routeRegisterPattern = new RegExp(`path: '/${domainNames.kebabCase}'`, 'g');
+      
+      if (routeImportPattern.test(existingContent) && routeRegisterPattern.test(existingContent)) {
+        this.logger.debug(`Route ${domainNames.kebabCase} already registered in route registry`);
+        return;
+      }
+
+      // Add import at the top (after existing imports)
+      const importStatement = `import ${domainNames.camelCase}Routes from './${domainNames.kebabCase}.routes';`;
+      const importRegex = /(import.*from.*\.routes';?\s*\n)/g;
+      let updatedContent = existingContent;
+      
+      // Find the last import and add new import after it
+      const matches = [...existingContent.matchAll(importRegex)];
+      if (matches.length > 0) {
+        const lastMatch = matches[matches.length - 1];
+        const insertPosition = lastMatch.index! + lastMatch[0].length;
+        updatedContent = existingContent.slice(0, insertPosition) + 
+                        importStatement + '\n' + 
+                        existingContent.slice(insertPosition);
+      } else {
+        // No existing route imports, add after the RouteRegistry import
+        updatedContent = existingContent.replace(
+          /(import { RouteRegistry }.*\n\n)/,
+          `$1${importStatement}\n`
+        );
+      }
+
+      // Add route registration
+      const routeRegistration = `
+// Register ${domainNames.pascalCase} routes
+RouteRegistry.register({
+  path: '/${domainNames.kebabCase}',
+  router: ${domainNames.camelCase}Routes,
+  name: '${domainNames.pascalCase} Routes',
+  description: '${domainNames.pascalCase} management endpoints'
+});`;
+
+      // Insert before the auto-generated section
+      updatedContent = updatedContent.replace(
+        /\/\/ START_GENERATED_ROUTES/,
+        routeRegistration + '\n\n// START_GENERATED_ROUTES'
+      );
+
+      await this.fileSystem.writeFile(routeIndexPath, updatedContent);
+      this.logger.info(`✅ Updated route registry with ${domainNames.pascalCase} routes`);
+      
+    } catch (error: any) {
+      this.logger.error(`Failed to update route registry: ${error.message}`);
+    }
   }
 
   /**

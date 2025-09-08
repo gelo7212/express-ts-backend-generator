@@ -34,7 +34,7 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
     },
     {
       flags: '-f, --fields <fields>',
-      description: 'Entity fields as JSON string'
+      description: "Entity fields as JSON string (use single quotes). Example: \"[{'name':'title','type':'string','required':true},{'name':'price','type':'number','min':0}]\""
     },
     {
       flags: '-t, --timestamps',
@@ -94,6 +94,8 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
       // Parse and validate fields from JSON string if provided
       let fields;
       if (opts.fields) {
+        
+        opts.fields = opts.fields.replace(/'/g, '"'); // Replace single quotes with double quotes 
         try {
           fields = JSON.parse(opts.fields);
           if (!Array.isArray(fields)) {
