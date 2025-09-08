@@ -9,5 +9,4 @@ export * from './generate-repository-command';
 export * from './generate-service-command';
 export * from './generate-use-case-command';
 export * from './generate-value-object-command';
-export * from './generate-mongodb-schema-command';
 export * from './generate-mongodb-lazy-command';

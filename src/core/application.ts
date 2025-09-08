@@ -28,7 +28,6 @@ import { RepositoryGenerator } from '../generators/repository-generator';
 import { ServiceGenerator } from '../generators/service-generator';
 import { ValueObjectGenerator } from '../generators/value-object-generator';
 import { PresentationHttpGenerator } from '../generators/presentation-http-generator';
-import { MongoDbSchemaGenerator } from '../generators/mongodb-schema-generator';
 import { MongoDbLazyGenerator } from '../generators/mongodb-lazy-generator';
 
 // Commands
@@ -41,7 +40,6 @@ import { GenerateServiceCommand } from '../commands/generate-service-command';
 import { GenerateValueObjectCommand } from '../commands/generate-value-object-command';
 import { GeneratePresentationHttpCommand } from '../commands/generate-presentation-http-command';
 import { GenerateEntityCommand } from '../commands/generate-entity-command';
-import { GenerateMongoDbSchemaCommand } from '../commands/generate-mongodb-schema-command';
 import { GenerateMongoDbLazyCommand } from '../commands/generate-mongodb-lazy-command';
 
 /**
@@ -155,10 +153,6 @@ export class Application {
     factory.registerGenerator('presentation-http', 
       new PresentationHttpGenerator(fileSystem, logger, templateEngine, templateRegistry)
     );
-    
-    factory.registerGenerator('mongodb-schema', 
-      new MongoDbSchemaGenerator(fileSystem, logger, templateEngine, templateRegistry, stringUtils)
-    );
 
     factory.registerGenerator('mongodb-lazy', 
       new MongoDbLazyGenerator(fileSystem, logger, templateEngine, templateRegistry)
@@ -216,10 +210,6 @@ export class Application {
     
     registry.register(
       new GenerateEntityCommand(this.container, logger, stringUtils, generatorFactory)
-    );
-    
-    registry.register(
-      new GenerateMongoDbSchemaCommand(this.container, logger, stringUtils, generatorFactory)
     );
 
     registry.register(

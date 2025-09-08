@@ -1,6 +1,6 @@
 {
-  "name": "express-ts-backend-generator-v2",
-  "version": "2.0.0",
+  "name": "express-ts-backend-generator",
+  "version": "2.0.1",
   "type": "commonjs",
   "description": "Clean, maintainable CLI tool to scaffold Express TypeScript projects with DDD architecture",
   "keywords": [
@@ -31,6 +31,7 @@
   "files": [
     "dist/**/*",
     "templates/**/*",
+    "configs/**/*",
     "README.md",
     "LICENSE"
   ],
