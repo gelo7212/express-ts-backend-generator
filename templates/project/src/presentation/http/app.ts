@@ -3,10 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { container } from './infrastructure/container';
-import { TYPES, ILogger } from './infrastructure/types';
-import userRoutes from './presentation/http/routes/user.routes';
-import { errorHandler } from './presentation/http/middleware/error-handler.middleware';
+import { container } from '../../infrastructure/container';
+import { TYPES, ILogger } from '../../infrastructure/types';
+import { RouteRegistry } from './routes';
+import { errorHandler } from './middleware/error-handler.middleware';
 
 const app = express();
 const logger = container.get<ILogger>(TYPES.Logger);
@@ -29,8 +29,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
-app.use('/api', userRoutes);
+// API Routes - Auto-registered from RouteRegistry
+const routes = RouteRegistry.getRoutes();
+routes.forEach(route => {
+  app.use('/api', route.router);
+  logger.info(`📍 Registered route: ${route.path} -> ${route.name}`);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

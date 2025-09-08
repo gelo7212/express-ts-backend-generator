@@ -3,3 +3,4 @@ export * from './logger';
 export * from './file-system';
 export * from './string-utils';
 export * from './template-engine';
+export * from './container-manager';
