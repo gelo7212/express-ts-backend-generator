@@ -1,0 +1,32 @@
+import { model, Model } from 'mongoose';
+import { <%= schemaNames.camelCase %>Schema, I<%= schemaNames.pascalCase %>Document } from '../schemas/<%= schemaNames.kebabCase %>.schema';
+
+/**
+ * <%= schemaNames.pascalCase %> Model - Database Technology Agnostic
+ * Generated on: <%= new Date().toISOString() %>
+ * Database: <%= databaseName %>
+ * 
+ * This model works with the database agnostic connection system.
+ * Can be used with MongoDB, PostgreSQL, MySQL, etc. through the
+ * DatabaseConnectionFactory pattern.
+ */
+
+// Define the model interface
+export interface I<%= schemaNames.pascalCase %>Model extends Model<I<%= schemaNames.pascalCase %>Document> {
+<% if (generateStatics && staticMethods && staticMethods.length > 0) { -%>
+<% staticMethods.forEach(function(method) { -%>
+  <%= method.name %>(<%= method.params || '' %>): <%= method.returnType || 'any' %>;
+<% }) -%>
+<% } -%>
+}
+
+// Create and export the model
+export const <%= schemaNames.pascalCase %>Model: I<%= schemaNames.pascalCase %>Model = model<I<%= schemaNames.pascalCase %>Document, I<%= schemaNames.pascalCase %>Model>(
+  '<%= schemaNames.pascalCase %>',
+  <%= schemaNames.camelCase %>Schema
+);
+
+export default <%= schemaNames.pascalCase %>Model;
+
+// Re-export the interface for convenience
+export type { I<%= schemaNames.pascalCase %>Document };

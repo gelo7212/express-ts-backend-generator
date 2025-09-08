@@ -1,0 +1,34 @@
+/**
+ * MongoDB Infrastructure - Lazy Loading Pattern
+ * 
+ * This module exports all MongoDB implementation components using a lazy-loading pattern.
+ * Each entity has its own MongoDB connection and model that loads only when first accessed.
+ * 
+ * Benefits:
+ * ✅ Each entity has its own optimized MongoDB connection
+ * ✅ Mongoose ODM with all its features - validations, middleware, plugins
+ * ✅ Lazy loading - connections only created when needed
+ * ✅ MongoDB-specific features - text search, aggregations, flexible schemas
+ * ✅ No database adapter abstraction - pure Mongoose implementation
+ * 
+ * Generated on: <%= new Date().toISOString() %>
+ * Entity: <%= schemaNames.pascalCase %>
+ */
+
+// Lazy connection pattern
+export { <%= schemaNames.camelCase %>MongoConnection } from './connection';
+
+// Mongoose model with lazy loading
+export { get<%= schemaNames.pascalCase %>Model, I<%= schemaNames.pascalCase %>Document } from './models/<%= schemaNames.kebabCase %>.model';
+
+// Repository implementation
+export { <%= schemaNames.pascalCase %>MongoRepository } from './repositories/<%= schemaNames.kebabCase %>.repository';
+import { <%= schemaNames.pascalCase %>MongoRepository } from './repositories/<%= schemaNames.kebabCase %>.repository';
+
+/**
+ * Repository Factory
+ * Creates and returns a new instance of the MongoDB repository
+ */
+export function create<%= schemaNames.pascalCase %>Repository(): <%= schemaNames.pascalCase %>MongoRepository {
+  return new <%= schemaNames.pascalCase %>MongoRepository();
+}

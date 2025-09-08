@@ -1,0 +1,89 @@
+import mongoose, { Schema, Model, Document } from 'mongoose';
+import { <%= schemaNames.camelCase %>MongoConnection } from '../connection';
+import { <%= schemaNames.camelCase %>Schema } from '../schemas/<%= schemaNames.kebabCase %>.schema';
+
+/**
+ * <%= schemaNames.pascalCase %> Mongoose Model
+ * Generated on: <%= new Date().toISOString() %>
+ */
+
+// Enhanced interface with MongoDB-specific features
+export interface I<%= schemaNames.pascalCase %>Document extends Document {
+  <% fields.forEach(field => { %>
+  <%= field.name %>: <%= field.mongooseType %>;
+  <% }) %>
+  <% if (timestamps) { %>
+  createdAt: Date;
+  updatedAt: Date;
+  <% } %>
+  
+  // MongoDB-specific virtual and computed fields
+  id: string; // MongoDB _id as string
+}
+
+<% if (indexes && indexes.length > 0) { %>
+// Database indexes for performance
+<% indexes.forEach(index => { %>
+<%= schemaNames.camelCase %>Schema.index(<%= JSON.stringify(index.fields) %><%= index.options ? ', ' + JSON.stringify(index.options) : '' %>);
+<% }) %>
+<% } %>
+
+<% if (virtuals && virtuals.length > 0) { %>
+// Virtual fields
+<% virtuals.forEach(virtual => { %>
+<%= schemaNames.camelCase %>Schema.virtual('<%= virtual.name %>').get(function() {
+  return <%= virtual.getter %>;
+});
+<% }) %>
+<% } %>
+
+<% if (methods && methods.length > 0) { %>
+// Instance methods
+<% methods.forEach(method => { %>
+<%= schemaNames.camelCase %>Schema.methods.<%= method.name %> = function(<%= method.params || '' %>) {
+  <%= method.body %>
+};
+<% }) %>
+<% } %>
+
+<% if (statics && statics.length > 0) { %>
+// Static methods with MongoDB features
+<% statics.forEach(staticMethod => { %>
+<%= schemaNames.camelCase %>Schema.statics.<%= staticMethod.name %> = function(<%= staticMethod.params || '' %>) {
+  <%= staticMethod.body %>
+};
+<% }) %>
+<% } %>
+
+// Enhanced Model interface with static methods
+interface I<%= schemaNames.pascalCase %>Model extends Model<I<%= schemaNames.pascalCase %>Document> {
+  findByEmail(email: string): Promise<I<%= schemaNames.pascalCase %>Document | null>;
+  findActive(): Promise<I<%= schemaNames.pascalCase %>Document[]>;
+  searchByName(searchTerm: string): Promise<I<%= schemaNames.pascalCase %>Document[]>;
+  <% if (statics && statics.length > 0) { %>
+  <% statics.forEach(staticMethod => { %>
+  <%= staticMethod.name %>(<%= staticMethod.params || '' %>): <%= staticMethod.returnType || 'any' %>;
+  <% }) %>
+  <% } %>
+}
+
+/**
+ * Lazy-loaded Mongoose Model
+ * Only connects to MongoDB when first used
+ */
+let <%= schemaNames.camelCase %>Model: I<%= schemaNames.pascalCase %>Model | null = null;
+
+export async function get<%= schemaNames.pascalCase %>Model(): Promise<I<%= schemaNames.pascalCase %>Model> {
+  if (<%= schemaNames.camelCase %>Model) {
+    return <%= schemaNames.camelCase %>Model;
+  }
+
+  // Lazy-load connection and create model
+  const connection = await <%= schemaNames.camelCase %>MongoConnection.getConnection();
+  <%= schemaNames.camelCase %>Model = connection.model<I<%= schemaNames.pascalCase %>Document, I<%= schemaNames.pascalCase %>Model>(
+    '<%= schemaNames.pascalCase %>', 
+    <%= schemaNames.camelCase %>Schema
+  );
+
+  return <%= schemaNames.camelCase %>Model;
+}

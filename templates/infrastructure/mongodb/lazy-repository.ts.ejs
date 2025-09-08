@@ -1,0 +1,284 @@
+import { injectable } from 'inversify';
+import { get<%= schemaNames.pascalCase %>Model, I<%= schemaNames.pascalCase %>Document } from '../models/<%= schemaNames.kebabCase %>.model';
+import { I<%= schemaNames.pascalCase %>Repository } from '../../../../../domain/<%= schemaNames.kebabCase %>/repositories/<%= schemaNames.kebabCase %>.repository.interface';
+import { <%= schemaNames.pascalCase %> } from '../../../../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity';
+
+/**
+ * <%= schemaNames.pascalCase %> Repository - MongoDB Implementation with Native Mongoose
+ * 
+ * Benefits of this approach:
+ * ✅ Uses Mongoose ODM - industry standard for MongoDB
+ * ✅ Lazy loading - only connects when first used
+ * ✅ Entity-specific database - <%= schemaNames.camelCase %> have their own MongoDB instance
+ * ✅ MongoDB-specific features - text search, flexible schemas, aggregations
+ * ✅ No custom database adapters - pure Mongoose
+ * 
+ * Generated on: <%= new Date().toISOString() %>
+ */
+@injectable()
+export class <%= schemaNames.pascalCase %>MongoRepository implements I<%= schemaNames.pascalCase %>Repository {
+
+  constructor() {
+    // No dependencies - completely self-contained
+    // Mongoose connection lazy-loads when first method is called
+  }
+
+  async findById(id: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      // Lazy-load Mongoose model and connection on first use
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Doc = await model.findById(id);
+      
+      if (!<%= schemaNames.camelCase %>Doc) return null;
+      
+      // Convert Mongoose document to domain entity
+      return this.toDomainEntity(<%= schemaNames.camelCase %>Doc);
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findById error:', error);
+      return null;
+    }
+  }
+
+  async findByEmail(email: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Doc = await model.findByEmail(email);
+      
+      if (!<%= schemaNames.camelCase %>Doc) return null;
+      
+      return this.toDomainEntity(<%= schemaNames.camelCase %>Doc);
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findByEmail error:', error);
+      return null;
+    }
+  }
+
+  async findAll(): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.find().limit(100).sort({ createdAt: -1 });
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findAll error:', error);
+      return [];
+    }
+  }
+
+  async save(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<void> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      
+      if (<%= schemaNames.camelCase %>.id) {
+        // Update existing <%= schemaNames.camelCase %>
+        const updateData: any = {
+          name: <%= schemaNames.camelCase %>.name,
+          isActive: <%= schemaNames.camelCase %>.isActive,
+          updatedAt: new Date()
+        };
+        
+        // Add email if it exists as a property
+        if ((<%= schemaNames.camelCase %> as any).email) {
+          updateData.email = ((<%= schemaNames.camelCase %> as any).email.value) || ((<%= schemaNames.camelCase %> as any).email);
+        }
+        
+        const <%= schemaNames.camelCase %>Doc = await model.findByIdAndUpdate(
+          <%= schemaNames.camelCase %>.id,
+          updateData,
+          { new: true }
+        );
+        
+        if (!<%= schemaNames.camelCase %>Doc) throw new Error('<%= schemaNames.pascalCase %> not found for update');
+      } else {
+        // Create new <%= schemaNames.camelCase %>
+        const <%= schemaNames.camelCase %>Data: any = {
+          name: <%= schemaNames.camelCase %>.name,
+          isActive: <%= schemaNames.camelCase %>.isActive,
+          // MongoDB-specific enhancements
+          profile: {
+            preferences: {
+              language: 'en',
+              timezone: 'UTC',
+              notifications: {
+                email: true,
+                push: true,
+                sms: false
+              }
+            }
+          },
+          roles: ['<%= schemaNames.camelCase %>'],
+          metadata: new Map()
+        };
+        
+        // Add email if it exists as a property
+        if ((<%= schemaNames.camelCase %> as any).email) {
+          <%= schemaNames.camelCase %>Data.email = ((<%= schemaNames.camelCase %> as any).email.value) || ((<%= schemaNames.camelCase %> as any).email);
+        }
+        
+        const <%= schemaNames.camelCase %>Doc = new model(<%= schemaNames.camelCase %>Data);
+        await <%= schemaNames.camelCase %>Doc.save();
+      }
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> save error:', error);
+      throw error;
+    }
+  }
+
+  async update(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<void> {
+    return this.save(<%= schemaNames.camelCase %>); // Same logic for MongoDB
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      await model.findByIdAndDelete(id);
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> delete error:', error);
+      throw error;
+    }
+  }
+
+  // Domain interface required methods
+  async findByName(name: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Doc = await model.findOne({ name }).exec();
+      
+      if (!<%= schemaNames.camelCase %>Doc) return null;
+      
+      return this.toDomainEntity(<%= schemaNames.camelCase %>Doc);
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findByName error:', error);
+      return null;
+    }
+  }
+
+  async findByStatus(isActive: boolean): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.find({ isActive }).exec();
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findByStatus error:', error);
+      return [];
+    }
+  }
+
+  // MongoDB-specific methods using Mongoose features
+  async findByRole(role: string): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.find({ 
+        roles: { $in: [role] } 
+      }).exec();
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findByRole error:', error);
+      return [];
+    }
+  }
+
+  async findActive<%= schemaNames.pascalCase %>s(): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.findActive();
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findActive<%= schemaNames.pascalCase %>s error:', error);
+      return [];
+    }
+  }
+
+  async searchByName(searchTerm: string): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.searchByName(searchTerm);
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> searchByName error:', error);
+      return [];
+    }
+  }
+
+  async findByLanguage(language: string): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      const <%= schemaNames.camelCase %>Docs = await model.find({
+        'profile.preferences.language': language
+      }).exec();
+      
+      return <%= schemaNames.camelCase %>Docs.map(doc => this.toDomainEntity(doc));
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> findByLanguage error:', error);
+      return [];
+    }
+  }
+
+  async get<%= schemaNames.pascalCase %>Stats(): Promise<{ total: number; active: number; byRole: Record<string, number> }> {
+    try {
+      const model = await get<%= schemaNames.pascalCase %>Model();
+      
+      // MongoDB aggregation pipeline - native Mongoose feature
+      const stats = await model.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: ['$isActive', 1, 0] } }
+          }
+        }
+      ]);
+      
+      const roleStats = await model.aggregate([
+        { $unwind: '$roles' },
+        { $group: { _id: '$roles', count: { $sum: 1 } } }
+      ]);
+      
+      const byRole = roleStats.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        total: stats[0]?.total || 0,
+        active: stats[0]?.active || 0,
+        byRole
+      };
+    } catch (error) {
+      console.error('MongoDB <%= schemaNames.pascalCase %> get<%= schemaNames.pascalCase %>Stats error:', error);
+      return { total: 0, active: 0, byRole: {} };
+    }
+  }
+
+  /**
+   * Convert Mongoose document to domain entity
+   */
+  private toDomainEntity(<%= schemaNames.camelCase %>Doc: I<%= schemaNames.pascalCase %>Document): <%= schemaNames.pascalCase %> {
+    const entityProps: any = {
+      name: <%= schemaNames.camelCase %>Doc.name,
+      isActive: <%= schemaNames.camelCase %>Doc.isActive,
+      createdAt: <%= schemaNames.camelCase %>Doc.createdAt,
+      updatedAt: <%= schemaNames.camelCase %>Doc.updatedAt
+    };
+    
+    // Add email if it exists on the document
+    if ((<%= schemaNames.camelCase %>Doc as any).email) {
+      // Try to create Email value object, fallback to plain string
+      try {
+        // This will work if Email value object exists
+        const { Email } = require('../../../../../domain/<%= schemaNames.kebabCase %>/value-objects/email');
+        entityProps.email = new Email((<%= schemaNames.camelCase %>Doc as any).email);
+      } catch {
+        // Fallback to plain string if Email value object doesn't exist
+        entityProps.email = (<%= schemaNames.camelCase %>Doc as any).email;
+      }
+    }
+    
+    // Pass MongoDB _id as the second parameter to preserve the database ID
+    return new <%= schemaNames.pascalCase %>(entityProps, (<%= schemaNames.camelCase %>Doc._id as any).toString());
+  }
+}

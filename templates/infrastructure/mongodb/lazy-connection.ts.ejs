@@ -1,0 +1,116 @@
+import mongoose from 'mongoose';
+
+/**
+ * <%= schemaNames.pascalCase %> Database Connection - Lazy Loaded MongoDB
+ * Entity-specific connection that initializes only when first used
+ * 
+ * This is completely separate from other entity MongoDB connections
+ * <%= schemaNames.pascalCase %> can have their own database, even different MongoDB instance
+ * Generated on: <%= new Date().toISOString() %>
+ */
+
+class <%= schemaNames.pascalCase %>MongoConnection {
+  private connection: mongoose.Connection | null = null;
+  private isConnecting = false;
+
+  /**
+   * Lazy connection - only connects when first needed
+   * <%= schemaNames.pascalCase %> database is independent from other entity databases
+   */
+  async getConnection(): Promise<mongoose.Connection> {
+    // Return existing connection if ready
+    if (this.connection && this.connection.readyState === 1) {
+      return this.connection;
+    }
+
+    // Prevent multiple simultaneous connections
+    if (this.isConnecting) {
+      while (this.isConnecting) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      if (this.connection && this.connection.readyState === 1) {
+        return this.connection;
+      }
+    }
+
+    // Initialize connection on first use
+    return this.connect();
+  }
+
+  private async connect(): Promise<mongoose.Connection> {
+    this.isConnecting = true;
+
+    try {
+      console.log('🔌 Lazy-loading <%= schemaNames.pascalCase %> MongoDB connection...');
+
+      // <%= schemaNames.pascalCase %> can have completely different MongoDB instance
+      const connectionString = process.env.<%= schemaNames.constantCase %>_MONGODB_URI || 
+                              process.env.MONGODB_URI || 
+                              'mongodb://localhost:27017/<%= schemaNames.kebabCase %>_db';
+
+      // Create dedicated connection for <%= schemaNames.camelCase %>
+      this.connection = mongoose.createConnection(connectionString, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        bufferCommands: false, // Fail fast if not connected
+      });
+
+      this.connection.on('connected', () => {
+        console.log('✅ <%= schemaNames.pascalCase %> MongoDB lazy-loaded successfully');
+      });
+
+      this.connection.on('error', (error) => {
+        console.error('❌ <%= schemaNames.pascalCase %> MongoDB connection error:', error);
+        this.connection = null; // Reset on error
+      });
+
+      this.connection.on('disconnected', () => {
+        console.log('⚠️ <%= schemaNames.pascalCase %> MongoDB disconnected');
+        this.connection = null;
+      });
+
+      // Wait for connection to be ready
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('<%= schemaNames.pascalCase %> MongoDB connection timeout'));
+        }, 10000);
+
+        this.connection!.once('open', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+
+        this.connection!.once('error', (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
+
+      return this.connection;
+
+    } catch (error) {
+      console.error('❌ Failed to lazy-load <%= schemaNames.pascalCase %> MongoDB:', error);
+      this.connection = null;
+      throw error;
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.connection) {
+      await this.connection.close();
+      this.connection = null;
+      console.log('🔌 <%= schemaNames.pascalCase %> MongoDB connection closed');
+    }
+  }
+
+  isConnected(): boolean {
+    return this.connection?.readyState === 1;
+  }
+}
+
+// Singleton instance - lazy-loaded for <%= schemaNames.camelCase %>
+export const <%= schemaNames.camelCase %>MongoConnection = new <%= schemaNames.pascalCase %>MongoConnection();
+export default <%= schemaNames.camelCase %>MongoConnection;

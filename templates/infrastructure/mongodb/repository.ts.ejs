@@ -1,0 +1,183 @@
+import { FilterQuery, UpdateQuery, QueryOptions } from 'mongoose';
+import { <%= schemaNames.pascalCase %>Model, I<%= schemaNames.pascalCase %>Document } from '../models/<%= schemaNames.kebabCase %>.model';
+import { databaseConnection } from '../connection';
+
+/**
+ * Database Technology Agnostic Repository for <%= schemaNames.pascalCase %>
+ * Generated on: <%= new Date().toISOString() %>
+ * Database: <%= databaseName %>
+ * 
+ * This repository works with the database agnostic connection system.
+ * The connection is managed through DatabaseConnectionFactory, making it
+ * easy to switch between MongoDB, PostgreSQL, MySQL, etc.
+ */
+
+export class <%= schemaNames.pascalCase %>MongoRepository {
+  
+  /**
+   * Check if database connection is ready
+   */
+  private ensureConnection(): void {
+    if (!databaseConnection.isConnectionReady()) {
+      throw new Error(`Database connection is not ready. State: ${databaseConnection.getConnectionState()}`);
+    }
+  }
+  
+  /**
+   * Create a new <%= schemaNames.camelCase %>
+   */
+  async create(data: Partial<I<%= schemaNames.pascalCase %>Document>): Promise<I<%= schemaNames.pascalCase %>Document> {
+    try {
+      this.ensureConnection();
+      const <%= schemaNames.camelCase %> = new <%= schemaNames.pascalCase %>Model(data);
+      return await <%= schemaNames.camelCase %>.save();
+    } catch (error) {
+      throw new Error(`Error creating <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Find <%= schemaNames.camelCase %> by ID
+   */
+  async findById(id: string): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findById(id).exec();
+    } catch (error) {
+      throw new Error(`Error finding <%= schemaNames.camelCase %> by ID: ${error}`);
+    }
+  }
+
+  /**
+   * Find one <%= schemaNames.camelCase %> by filter
+   */
+  async findOne(filter: FilterQuery<I<%= schemaNames.pascalCase %>Document>): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findOne(filter).exec();
+    } catch (error) {
+      throw new Error(`Error finding <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Find multiple <%= schemaNames.pluralCamelCase %>
+   */
+  async find(
+    filter: FilterQuery<I<%= schemaNames.pascalCase %>Document> = {},
+    options: QueryOptions = {}
+  ): Promise<I<%= schemaNames.pascalCase %>Document[]> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.find(filter, null, options).exec();
+    } catch (error) {
+      throw new Error(`Error finding <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Update <%= schemaNames.camelCase %> by ID
+   */
+  async updateById(
+    id: string,
+    update: UpdateQuery<I<%= schemaNames.pascalCase %>Document>,
+    options: QueryOptions = { new: true }
+  ): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findByIdAndUpdate(id, update, options).exec();
+    } catch (error) {
+      throw new Error(`Error updating <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Update one <%= schemaNames.camelCase %> by filter
+   */
+  async updateOne(
+    filter: FilterQuery<I<%= schemaNames.pascalCase %>Document>,
+    update: UpdateQuery<I<%= schemaNames.pascalCase %>Document>,
+    options: QueryOptions = { new: true }
+  ): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findOneAndUpdate(filter, update, options).exec();
+    } catch (error) {
+      throw new Error(`Error updating <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Delete <%= schemaNames.camelCase %> by ID
+   */
+  async deleteById(id: string): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findByIdAndDelete(id).exec();
+    } catch (error) {
+      throw new Error(`Error deleting <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Delete one <%= schemaNames.camelCase %> by filter
+   */
+  async deleteOne(filter: FilterQuery<I<%= schemaNames.pascalCase %>Document>): Promise<I<%= schemaNames.pascalCase %>Document | null> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.findOneAndDelete(filter).exec();
+    } catch (error) {
+      throw new Error(`Error deleting <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Count documents
+   */
+  async count(filter: FilterQuery<I<%= schemaNames.pascalCase %>Document> = {}): Promise<number> {
+    try {
+      return await <%= schemaNames.pascalCase %>Model.countDocuments(filter).exec();
+    } catch (error) {
+      throw new Error(`Error counting <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Check if <%= schemaNames.camelCase %> exists
+   */
+  async exists(filter: FilterQuery<I<%= schemaNames.pascalCase %>Document>): Promise<boolean> {
+    try {
+      const doc = await <%= schemaNames.pascalCase %>Model.exists(filter);
+      return doc !== null;
+    } catch (error) {
+      throw new Error(`Error checking if <%= schemaNames.camelCase %> exists: ${error}`);
+    }
+  }
+
+  /**
+   * Paginate <%= schemaNames.pluralCamelCase %>
+   */
+  async paginate(
+    filter: FilterQuery<I<%= schemaNames.pascalCase %>Document> = {},
+    page: number = 1,
+    limit: number = 10,
+    sort: any = { createdAt: -1 }
+  ): Promise<{
+    data: I<%= schemaNames.pascalCase %>Document[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+      const [data, total] = await Promise.all([
+        <%= schemaNames.pascalCase %>Model.find(filter).sort(sort).skip(skip).limit(limit).exec(),
+        <%= schemaNames.pascalCase %>Model.countDocuments(filter).exec()
+      ]);
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      throw new Error(`Error paginating <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+}

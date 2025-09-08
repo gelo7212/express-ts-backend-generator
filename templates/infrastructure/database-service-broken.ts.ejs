@@ -1,0 +1,294 @@
+import { injectable } from 'inversify';
+import { DatabaseConnection } from './database-connection.interface';
+import { DatabaseConnectionFactory } from './database-connection.factory';
+
+/**
+ * Database Service for managing multiple database connections
+ * Supports database technology agnostic approach
+ * Generated on: <%= new Date().toISOString() %>
+ */
+@injectable()
+export class DatabaseService {
+  private connections: Map<string, DatabaseConnection> = new Map();
+  private isShuttingDown = false;
+
+  /**
+   * Get database connection by name
+   * @param databaseName - Name of the database (e.g., 'main', 'users', 'orders')
+   * @param databaseType - Type of database (e.g., 'mongodb', 'postgresql', 'mysql')
+   */
+  getConnection(databaseName: string = 'main', databaseType: string = 'mongodb'): DatabaseConnection {
+    if (this.isShuttingDown) {
+      throw new Error('DatabaseService is shutting down, cannot get connections');
+    }
+
+    const connectionKey = `${databaseName}:${databaseType}`;
+    
+    if (!this.connections.has(connectionKey)) {
+      console.log(`🔌 Creating new ${databaseType} connection for database: ${databaseName}`);
+      
+      const connection = DatabaseConnectionFactory.create({
+        type: databaseType as any,
+        database: databaseName,
+        host: process.env[`${databaseType.toUpperCase()}_HOST`] || process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env[`${databaseType.toUpperCase()}_PORT`] || process.env.DB_PORT || this.getDefaultPort(databaseType)),
+        username: process.env[`${databaseType.toUpperCase()}_USERNAME`] || process.env.DB_USERNAME,
+        password: process.env[`${databaseType.toUpperCase()}_PASSWORD`] || process.env.DB_PASSWORD,
+        options: this.getDefaultOptions(databaseType)
+      });
+
+      this.connections.set(connectionKey, connection);
+      console.log(`✅ ${databaseType} connection created for database: ${databaseName}`);
+    }
+
+    return this.connections.get(connectionKey)!;
+  }
+
+  /**
+   * Get default port for database type
+   */
+  private getDefaultPort(databaseType: string): string {
+    const defaultPorts: { [key: string]: string } = {
+      'mongodb': '27017',
+      'postgresql': '5432',
+      'mysql': '3306',
+      'sqlite': '0'
+    };
+    
+    return defaultPorts[databaseType] || '27017';
+  }
+
+  /**
+   * Get default options for database type
+   */
+  private getDefaultOptions(databaseType: string): any {
+    switch (databaseType) {
+      case 'mongodb':
+        return {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+          maxPoolSize: 10,
+          serverSelectionTimeoutMS: 5000,
+          socketTimeoutMS: 45000,
+          bufferMaxEntries: 0,
+          bufferCommands: false
+        };
+      
+      case 'postgresql':
+        return {
+          max: 10,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 2000
+        };
+      
+      case 'mysql':
+        return {
+          connectionLimit: 10,
+          acquireTimeout: 60000,
+          timeout: 60000
+        };
+      
+      default:
+        return {};
+    }
+  }
+
+  /**
+   * Get all active connections
+   */
+  getAllConnections(): Map<string, DatabaseConnection> {
+    return new Map(this.connections);
+  }
+
+  /**
+   * Check if all connections are healthy
+   */
+  async healthCheck(): Promise<{ [key: string]: any }> {
+    const results: { [key: string]: any } = {};
+
+    for (const [connectionKey, connection] of this.connections) {
+      try {
+        results[connectionKey] = {
+          status: connection.isConnectionReady() ? 'healthy' : 'unhealthy',
+          state: connection.getConnectionState(),
+          timestamp: new Date().toISOString()
+        };
+      } catch (error) {
+        results[connectionKey] = {
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        };
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Initialize connections for specific databases
+   */
+  async initialize(databaseConfigs: Array<{ name: string, type: string }> = [{ name: 'main', type: 'mongodb' }]): Promise<void> {
+    console.log(`� Initializing DatabaseService with databases: ${databaseConfigs.map(c => `${c.name} (${c.type})`).join(', ')}`);
+
+    for (const config of databaseConfigs) {
+      try {
+        this.getConnection(config.name, config.type);
+        console.log(`✅ Initialized ${config.type} connection for: ${config.name}`);
+      } catch (error) {
+        console.error(`❌ Failed to initialize ${config.type} connection for ${config.name}:`, error);
+        throw error;
+      }
+    }
+
+    console.log(`🎉 DatabaseService initialized successfully!`);
+  }
+
+  /**
+   * Gracefully shutdown all connections
+   */
+  async shutdown(): Promise<void> {
+    if (this.isShuttingDown) {
+      console.log('⚠️ DatabaseService is already shutting down');
+      return;
+    }
+
+    this.isShuttingDown = true;
+    console.log('🔄 Shutting down DatabaseService...');
+
+    const shutdownPromises = Array.from(this.connections.entries()).map(async ([connectionKey, connection]) => {
+      try {
+        await connection.disconnect();
+        console.log(`✅ Disconnected from: ${connectionKey}`);
+      } catch (error) {
+        console.error(`❌ Error disconnecting from ${connectionKey}:`, error);
+      }
+    });
+
+    await Promise.all(shutdownPromises);
+    this.connections.clear();
+    
+    console.log('✅ DatabaseService shutdown completed');
+  }
+
+  /**
+   * Get connection statistics
+   */
+  getStats(): { [key: string]: any } {
+    const stats: { [key: string]: any } = {
+      totalConnections: this.connections.size,
+      connections: {},
+      isShuttingDown: this.isShuttingDown,
+      timestamp: new Date().toISOString()
+    };
+
+    for (const [connectionKey, connection] of this.connections) {
+      stats.connections[connectionKey] = {
+        state: connection.getConnectionState(),
+        isReady: connection.isConnectionReady()
+      };
+    }
+
+    return stats;
+  }
+
+  /**
+   * Force reconnect to a specific database
+   */
+  async reconnect(databaseName: string, databaseType: string = 'mongodb'): Promise<void> {
+    const connectionKey = `${databaseName}:${databaseType}`;
+    console.log(`🔄 Reconnecting to: ${connectionKey}`);
+
+    const connection = this.connections.get(connectionKey);
+    if (connection) {
+      try {
+        await connection.disconnect();
+        this.connections.delete(connectionKey);
+        console.log(`🔌 Disconnected from ${connectionKey}`);
+      } catch (error) {
+        console.error(`⚠️ Error during disconnect from ${connectionKey}:`, error);
+      }
+    }
+
+    // Create new connection
+    this.getConnection(databaseName, databaseType);
+    console.log(`✅ Reconnected to: ${connectionKey}`);
+  }
+}
+
+    for (const [name, connection] of this.connections) {
+      if (!connection.isConnectionReady || !connection.isConnectionReady()) {
+        console.warn(`⚠️ Database connection '${name}' is not ready`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Get connection status for health checks
+   */
+  getConnectionStatus(): Record<string, string> {
+    const status: Record<string, string> = {};
+    
+    if (this.connections.size === 0) {
+      status.default = 'no-databases-configured';
+      return status;
+    }
+
+    for (const [name, connection] of this.connections) {
+      if (connection.getConnectionState) {
+        status[name] = connection.getConnectionState();
+      } else {
+        status[name] = 'unknown';
+      }
+    }
+    return status;
+  }
+
+  /**
+   * Gracefully disconnect all connections
+   */
+  async disconnectAll(): Promise<void> {
+    if (this.connections.size === 0) {
+      console.log('🔌 No database connections to disconnect');
+      return;
+    }
+
+    const disconnectPromises = Array.from(this.connections.entries()).map(
+      async ([name, connection]) => {
+        try {
+          if (connection.disconnect) {
+            await connection.disconnect();
+            console.log(`✅ Disconnected from database: ${name}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error disconnecting from ${name}:`, error);
+        }
+      }
+    );
+
+    await Promise.all(disconnectPromises);
+    this.connections.clear();
+    console.log('✅ All database connections closed');
+  }
+
+  /**
+   * Internal method to add a connection (used by generators)
+   * This method is used by the schema generators to register connections
+   */
+  private async connectToDatabase(
+    name: string,
+    type: 'mongodb' | 'postgresql' | 'mysql',
+    config: any
+  ): Promise<void> {
+    // This method will be implemented when database schemas are generated
+    console.log(`📋 Would connect to ${type} database: ${name}`);
+    
+    // TODO: This will be auto-generated based on the database schemas you create
+    // Example implementation:
+    // const connection = DatabaseConnectionFactory.create(type);
+    // await connection.connect(config);
+    // this.connections.set(name, connection);
+  }
+}

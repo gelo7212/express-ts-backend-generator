@@ -16,6 +16,7 @@ export const TYPES = {
   
   // Infrastructure
   Database: Symbol.for('Database'),
+  DatabaseService: Symbol.for('DatabaseService'),
   EventBus: Symbol.for('EventBus'),
   Cache: Symbol.for('Cache'),
   Logger: Symbol.for('Logger'),
