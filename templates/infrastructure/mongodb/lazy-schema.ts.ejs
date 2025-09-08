@@ -14,7 +14,7 @@ export const <%= schemaNames.camelCase %>Schema = new Schema({
     required: <%= field.schemaDefinition.required %>,<% } %><% if (field.schemaDefinition.unique) { %>
     unique: <%= field.schemaDefinition.unique %>,<% } %><% if (field.schemaDefinition.index) { %>
     index: <%= field.schemaDefinition.index %>,<% } %><% if (field.schemaDefinition.default !== undefined) { %>
-    default: <%= JSON.stringify(field.schemaDefinition.default) %>,<% } %><% if (field.schemaDefinition.validate) { %>
+    default: <%- JSON.stringify(field.schemaDefinition.default) %>,<% } %><% if (field.schemaDefinition.validate) { %>
     validate: <%= field.schemaDefinition.validate %>,<% } %><% if (field.schemaDefinition.trim) { %>
     trim: <%= field.schemaDefinition.trim %>,<% } %><% if (field.schemaDefinition.lowercase) { %>
     lowercase: <%= field.schemaDefinition.lowercase %>,<% } %><% if (field.schemaDefinition.uppercase) { %>
@@ -23,7 +23,7 @@ export const <%= schemaNames.camelCase %>Schema = new Schema({
     maxlength: <%= field.schemaDefinition.maxlength %>,<% } %><% if (field.schemaDefinition.min) { %>
     min: <%= field.schemaDefinition.min %>,<% } %><% if (field.schemaDefinition.max) { %>
     max: <%= field.schemaDefinition.max %>,<% } %><% if (field.schemaDefinition.enum) { %>
-    enum: <%= JSON.stringify(field.schemaDefinition.enum) %>,<% } %>
+    enum: <%- JSON.stringify(field.schemaDefinition.enum) %>,<% } %>
   },
 <% }) -%>
   

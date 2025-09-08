@@ -62,6 +62,9 @@ export class MongoDbLazyGenerator extends BaseGenerator {
         isDatabaseAware: false,
         isLazyLoading: true,
         useNativeMongoose: true,
+        // Shared domain configuration
+        sharedDomain: context.templateData.sharedDomain,
+        sharedDomainNames: context.templateData.sharedDomainNames,
         // Process schema fields with validation
         fields: this.processSchemaFields(context.templateData.fields || this.getDefaultSchemaFields()),
         // Default empty arrays for optional configurations
@@ -78,11 +81,24 @@ export class MongoDbLazyGenerator extends BaseGenerator {
       };
 
       // Create database directory structure
-      const entityDir = `src/infrastructure/database/${templateData.schemaNames.kebabCase}`;
-      const mongoDir = `${entityDir}/mongodb`;
-      const schemasDir = `${mongoDir}/schemas`;
-      const modelsDir = `${mongoDir}/models`;
-      const repositoriesDir = `${mongoDir}/repositories`;
+      let entityDir, mongoDir, schemasDir, modelsDir, repositoriesDir;
+      
+      if (templateData.sharedDomain) {
+        // Shared domain structure: src/infrastructure/database/shopping/mongodb/
+        const sharedDir = `src/infrastructure/database/${templateData.sharedDomainNames.kebabCase}`;
+        mongoDir = `${sharedDir}/mongodb`;
+        schemasDir = `${mongoDir}/schemas`;
+        modelsDir = `${mongoDir}/models`;
+        repositoriesDir = `${mongoDir}/repositories`;
+        entityDir = sharedDir;
+      } else {
+        // Individual entity structure: src/infrastructure/database/cart/mongodb/
+        entityDir = `src/infrastructure/database/${templateData.schemaNames.kebabCase}`;
+        mongoDir = `${entityDir}/mongodb`;
+        schemasDir = `${mongoDir}/schemas`;
+        modelsDir = `${mongoDir}/models`;
+        repositoriesDir = `${mongoDir}/repositories`;
+      }
 
       // Ensure directories exist
       for (const dir of [entityDir, mongoDir, schemasDir, modelsDir, repositoriesDir]) {
@@ -128,15 +144,29 @@ export class MongoDbLazyGenerator extends BaseGenerator {
     result: GenerationResult
   ): Promise<void> {
     const filePath = `${targetDir}/connection.ts`;
-    const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-connection.ts.ejs');
     
-    const content = await this.templateEngine.renderFile(templatePath, templateData);
-    await this.fileSystem.writeFile(filePath, content);
+    // For shared domains, only create connection if it doesn't exist
+    if (templateData.sharedDomain) {
+      const exists = await this.fileSystem.exists(filePath);
+      if (exists) {
+        this.logger.info(`📝 Shared connection already exists: ${filePath}`);
+        return;
+      }
+      // Use shared connection template for shared domain (Connection Manager - Option B)
+      const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/shared-connection.ts.ejs');
+      const content = await this.templateEngine.renderFile(templatePath, templateData);
+      await this.fileSystem.writeFile(filePath, content);
+      this.logger.info(`📝 Generated shared connection manager: ${filePath}`);
+    } else {
+      // Individual entity connection (keep current behavior)
+      const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-connection.ts.ejs');
+      const content = await this.templateEngine.renderFile(templatePath, templateData);
+      await this.fileSystem.writeFile(filePath, content);
+      this.logger.info(`📝 Generated lazy connection: ${filePath}`);
+    }
     
     const absolutePath = await this.fileSystem.getAbsolutePath(filePath);
     result.generatedFiles.push(absolutePath);
-    
-    this.logger.info(`📝 Generated lazy connection: ${filePath}`);
   }
 
   /**
@@ -168,15 +198,23 @@ export class MongoDbLazyGenerator extends BaseGenerator {
     result: GenerationResult
   ): Promise<void> {
     const filePath = `${targetDir}/${templateData.schemaNames.kebabCase}.model.ts`;
-    const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-model.ts.ejs');
+    
+    let templatePath;
+    if (templateData.sharedDomain) {
+      // Use shared model template that uses the connection manager
+      templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/shared-model.ts.ejs');
+      this.logger.info(`📝 Generated shared model: ${filePath}`);
+    } else {
+      // Use individual lazy model template (keep current behavior)
+      templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-model.ts.ejs');
+      this.logger.info(`📝 Generated lazy model: ${filePath}`);
+    }
     
     const content = await this.templateEngine.renderFile(templatePath, templateData);
     await this.fileSystem.writeFile(filePath, content);
     
     const absolutePath = await this.fileSystem.getAbsolutePath(filePath);
     result.generatedFiles.push(absolutePath);
-    
-    this.logger.info(`📝 Generated lazy model: ${filePath}`);
   }
 
   /**
@@ -208,15 +246,107 @@ export class MongoDbLazyGenerator extends BaseGenerator {
     result: GenerationResult
   ): Promise<void> {
     const filePath = `${targetDir}/index.ts`;
-    const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-index.ts.ejs');
     
-    const content = await this.templateEngine.renderFile(templatePath, templateData);
-    await this.fileSystem.writeFile(filePath, content);
+    if (templateData.sharedDomain) {
+      // For shared domains, append to existing index or create new one
+      await this.generateSharedIndex(filePath, templateData, result);
+    } else {
+      // For individual entities, generate complete index file
+      const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-index.ts.ejs');
+      const content = await this.templateEngine.renderFile(templatePath, templateData);
+      await this.fileSystem.writeFile(filePath, content);
+      
+      const absolutePath = await this.fileSystem.getAbsolutePath(filePath);
+      result.generatedFiles.push(absolutePath);
+      
+      this.logger.info(`📝 Generated lazy index: ${filePath}`);
+    }
+  }
+
+  /**
+   * Generate or update shared domain index file
+   */
+  private async generateSharedIndex(
+    filePath: string,
+    templateData: any,
+    result: GenerationResult
+  ): Promise<void> {
+    const exists = await this.fileSystem.exists(filePath);
+    
+    if (!exists) {
+      // Create new shared index file
+      const templatePath = this.templateRegistry.resolveTemplatePath('infrastructure/mongodb/lazy-index.ts.ejs');
+      const content = await this.templateEngine.renderFile(templatePath, templateData);
+      await this.fileSystem.writeFile(filePath, content);
+      
+      const absolutePath = await this.fileSystem.getAbsolutePath(filePath);
+      result.generatedFiles.push(absolutePath);
+      
+      this.logger.info(`📝 Generated shared index: ${filePath}`);
+    } else {
+      // Append to existing shared index file
+      await this.appendToSharedIndex(filePath, templateData, result);
+    }
+  }
+
+  /**
+   * Append entity exports to existing shared index file
+   */
+  private async appendToSharedIndex(
+    filePath: string,
+    templateData: any,
+    result: GenerationResult
+  ): Promise<void> {
+    const existingContent = await this.fileSystem.readFile(filePath);
+    const schemaNames = templateData.schemaNames;
+    
+    // Check if this entity is already exported
+    const modelExport = `export { get${schemaNames.pascalCase}Model, I${schemaNames.pascalCase}Document } from './models/${schemaNames.kebabCase}.model';`;
+    const repoExport = `export { ${schemaNames.pascalCase}MongoRepository } from './repositories/${schemaNames.kebabCase}.repository';`;
+    const factoryFunction = `export function create${schemaNames.pascalCase}Repository(): ${schemaNames.pascalCase}MongoRepository {`;
+    
+    if (existingContent.includes(`get${schemaNames.pascalCase}Model`)) {
+      this.logger.info(`📦 Entity ${schemaNames.pascalCase} already exists in shared index: ${filePath}`);
+      return;
+    }
+    
+    // Find insertion points
+    const connectionExportMatch = existingContent.match(/export \{ \w+ConnectionManager \} from '\.\/connection';/);
+    if (!connectionExportMatch) {
+      throw new Error('Could not find connection export in shared index file');
+    }
+    
+    const insertAfterConnection = connectionExportMatch.index! + connectionExportMatch[0].length;
+    
+    // Prepare the entity exports to append
+    const entityExports = `
+
+// Mongoose model with lazy loading - ${schemaNames.pascalCase}
+${modelExport}
+
+// Repository implementation - ${schemaNames.pascalCase}
+${repoExport}
+import { ${schemaNames.pascalCase}MongoRepository } from './repositories/${schemaNames.kebabCase}.repository';
+
+/**
+ * ${schemaNames.pascalCase} Repository Factory
+ * Creates and returns a new instance of the MongoDB repository
+ */
+export function create${schemaNames.pascalCase}Repository(): ${schemaNames.pascalCase}MongoRepository {
+  return new ${schemaNames.pascalCase}MongoRepository();
+}`;
+    
+    // Insert the new entity exports
+    const updatedContent = existingContent.slice(0, insertAfterConnection) + 
+                          entityExports + 
+                          existingContent.slice(insertAfterConnection);
+    
+    await this.fileSystem.writeFile(filePath, updatedContent);
     
     const absolutePath = await this.fileSystem.getAbsolutePath(filePath);
     result.generatedFiles.push(absolutePath);
     
-    this.logger.info(`📝 Generated lazy index: ${filePath}`);
+    this.logger.info(`📝 Updated shared index with ${schemaNames.pascalCase}: ${filePath}`);
   }
 
   /**
@@ -239,7 +369,12 @@ export class MongoDbLazyGenerator extends BaseGenerator {
       const schemaNames = templateData.schemaNames;
 
       // Add imports for MongoDB repository and interface
-      const mongoRepoImport = `import { ${schemaNames.pascalCase}MongoRepository } from './database/${schemaNames.kebabCase}/mongodb/repositories/${schemaNames.kebabCase}.repository';`;
+      // Use shared path if sharedDomain is specified
+      const repoPath = templateData.sharedDomain 
+        ? `./database/${templateData.sharedDomain}/mongodb/repositories/${schemaNames.kebabCase}.repository`
+        : `./database/${schemaNames.kebabCase}/mongodb/repositories/${schemaNames.kebabCase}.repository`;
+      
+      const mongoRepoImport = `import { ${schemaNames.pascalCase}MongoRepository } from '${repoPath}';`;
       const interfaceImport = `import { I${schemaNames.pascalCase}Repository } from '../domain/${schemaNames.kebabCase}/repositories/${schemaNames.kebabCase}.repository.interface';`;
       
       // Add binding for repository

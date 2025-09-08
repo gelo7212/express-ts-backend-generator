@@ -1,0 +1,137 @@
+import mongoose from 'mongoose';
+
+/**
+ * <%= sharedDomainNames.pascalCase %> Database Connection Manager - Shared MongoDB
+ * Multi-database connection manager that initializes only when first used
+ * 
+ * This connection manager handles multiple databases within the <%= sharedDomainNames.kebabCase %> domain
+ * All entities in this domain share the same connection pool for efficiency
+ * Generated on: <%= new Date().toISOString() %>
+ */
+
+class <%= sharedDomainNames.pascalCase %>ConnectionManager {
+  private connections: Map<string, mongoose.Connection> = new Map();
+  private isConnecting = false;
+
+  /**
+   * Get or create connection for the <%= sharedDomainNames.kebabCase %> domain
+   * All entities within this domain share the same connection pool
+   */
+  async getConnection(database?: string): Promise<mongoose.Connection> {
+    const dbName = database || '<%= databaseName %>';
+    
+    // Return existing connection if ready
+    if (this.connections.has(dbName)) {
+      const connection = this.connections.get(dbName)!;
+      if (connection.readyState === 1) {
+        return connection;
+      }
+    }
+
+    // Prevent multiple simultaneous connections
+    if (this.isConnecting) {
+      while (this.isConnecting) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      // Check again after waiting
+      if (this.connections.has(dbName)) {
+        const connection = this.connections.get(dbName)!;
+        if (connection.readyState === 1) {
+          return connection;
+        }
+      }
+    }
+
+    // Initialize connection on first use
+    return this.connect(dbName);
+  }
+
+  private async connect(dbName: string): Promise<mongoose.Connection> {
+    this.isConnecting = true;
+
+    try {
+      console.log(`🔌 Connecting to <%= sharedDomainNames.pascalCase %> MongoDB (${dbName})...`);
+
+      // <%= sharedDomainNames.pascalCase %> domain can have dedicated MongoDB instance
+      const connectionString = process.env.<%= envVar %> || 
+                              process.env.MONGODB_URI || 
+                              'mongodb://localhost:27017/<%= databaseName %>';
+
+      console.log(`📡 <%= sharedDomainNames.pascalCase %> MongoDB URI: ${connectionString}`);
+
+      // Create dedicated connection for this domain
+      const connection = mongoose.createConnection(connectionString, {
+        // MongoDB connection options for production
+        maxPoolSize: 10,           // Maintain up to 10 socket connections
+        serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+        socketTimeoutMS: 45000,    // Close sockets after 45 seconds of inactivity
+        family: 4,                 // Use IPv4, skip trying IPv6
+        bufferCommands: false,     // Disable mongoose buffering
+      });
+
+      // Handle connection events
+      connection.on('connected', () => {
+        console.log(`✅ <%= sharedDomainNames.pascalCase %> MongoDB connected successfully to ${dbName}`);
+      });
+
+      connection.on('error', (error) => {
+        console.error(`❌ <%= sharedDomainNames.pascalCase %> MongoDB connection error:`, error);
+      });
+
+      connection.on('disconnected', () => {
+        console.log(`⚠️  <%= sharedDomainNames.pascalCase %> MongoDB disconnected from ${dbName}`);
+        this.connections.delete(dbName);
+      });
+
+      // Store the connection
+      this.connections.set(dbName, connection);
+      
+      this.isConnecting = false;
+      return connection;
+
+    } catch (error) {
+      this.isConnecting = false;
+      console.error(`💥 Failed to connect to <%= sharedDomainNames.pascalCase %> MongoDB:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Close all connections for this domain
+   */
+  async closeAllConnections(): Promise<void> {
+    console.log(`🔌 Closing all <%= sharedDomainNames.pascalCase %> MongoDB connections...`);
+    
+    for (const [dbName, connection] of this.connections.entries()) {
+      try {
+        await connection.close();
+        console.log(`✅ Closed <%= sharedDomainNames.pascalCase %> connection to ${dbName}`);
+      } catch (error) {
+        console.error(`❌ Error closing <%= sharedDomainNames.pascalCase %> connection to ${dbName}:`, error);
+      }
+    }
+    
+    this.connections.clear();
+  }
+
+  /**
+   * Get connection status for monitoring
+   */
+  getConnectionStatus(): { [key: string]: string } {
+    const status: { [key: string]: string } = {};
+    
+    for (const [dbName, connection] of this.connections.entries()) {
+      const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+      status[dbName] = states[connection.readyState] || 'unknown';
+    }
+    
+    return status;
+  }
+}
+
+// Export singleton instance for the <%= sharedDomainNames.kebabCase %> domain
+export const <%= sharedDomainNames.camelCase %>ConnectionManager = new <%= sharedDomainNames.pascalCase %>ConnectionManager();
+
+// For backward compatibility and convenience
+export const get<%= sharedDomainNames.pascalCase %>Connection = (database?: string) => 
+  <%= sharedDomainNames.camelCase %>ConnectionManager.getConnection(database);

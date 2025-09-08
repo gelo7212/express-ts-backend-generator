@@ -69,6 +69,10 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
     {
       flags: '--db-name <name>',
       description: 'Database name (defaults to entity name + _db)'
+    },
+    {
+      flags: '--shared <domain>',
+      description: 'Generate within shared database domain structure with connection manager (e.g., --shared shopping creates src/infrastructure/database/shopping/mongodb/)'
     }
   ];
 
@@ -122,6 +126,12 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
 
       // Generate naming conventions
       const schemaNames = this.stringUtils.generateNamingConventions(entityName);
+      
+      // Generate shared domain naming if provided
+      let sharedDomainNames;
+      if (opts.shared) {
+        sharedDomainNames = this.stringUtils.generateNamingConventions(opts.shared);
+      }
 
       // Create generation context
       const context: GenerationContext = {
@@ -130,6 +140,9 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
         templateData: {
           schemaName: entityName,
           schemaNames,
+          // Shared domain configuration
+          sharedDomain: opts.shared,
+          sharedDomainNames,
           // MongoDB specific options
           fields,
           timestamps: opts.timestamps !== false,
@@ -138,8 +151,10 @@ export class GenerateMongoDbLazyCommand extends BaseCommand {
           methods: opts.methods || [],
           statics: opts.statics || [],
           // Database configuration
-          databaseName: opts.dbName || `${schemaNames.kebabCase}_db`,
-          envVar: opts.envVar?.replace('{ENTITY}', schemaNames.uppercase) || `${schemaNames.uppercase}_MONGODB_URI`,
+          databaseName: opts.dbName || (opts.shared ? `${sharedDomainNames?.kebabCase}_db` : `${schemaNames.kebabCase}_db`),
+          envVar: opts.shared 
+            ? `${sharedDomainNames?.uppercase}_MONGODB_URI`
+            : (opts.envVar?.replace('{ENTITY}', schemaNames.uppercase) || `${schemaNames.uppercase}_MONGODB_URI`),
           // Merge with config file
           ...config
         },
