@@ -1,0 +1,228 @@
+import mongoose, { Connection } from 'mongoose';
+
+/**
+ * Database Technology Agnostic Connection Module
+ * Generated on: <%= new Date().toISOString() %>
+ * Database: <%= databaseName %>
+ * 
+ * This module provides a database technology agnostic approach:
+ * - Abstract DatabaseConnection interface works with any database
+ * - DatabaseConnectionFactory creates appropriate implementations
+ * - Currently supports MongoDB, extensible to PostgreSQL, MySQL, etc.
+ * 
+ * Usage Examples:
+ * ```typescript
+ * // Technology agnostic way
+ * const connection = DatabaseConnectionFactory.create('mongodb');
+ * await connection.connect({ uri: 'mongodb://localhost:27017/<%= databaseName %>-db' });
+ * 
+ * // Direct MongoDB way (backwards compatible)
+ * await mongoConnection.connect(defaultMongoConfig);
+ * ```
+ */
+
+// Abstract Database Configuration
+export interface DatabaseConfig {
+  uri: string;
+  options?: Record<string, any>;
+}
+
+// Abstract Database Connection Interface
+export interface DatabaseConnection {
+  connect(config: DatabaseConfig): Promise<void>;
+  disconnect(): Promise<void>;
+  isConnectionReady(): boolean;
+  getConnection(): any;
+  getConnectionState(): string;
+}
+
+// MongoDB-specific configuration for backwards compatibility
+export interface MongoDBConfig extends DatabaseConfig {
+  options?: mongoose.ConnectOptions;
+}
+
+// MongoDB Implementation of Database Connection
+class MongoDBConnectionImpl implements DatabaseConnection {
+  private static instance: MongoDBConnectionImpl;
+  private connection: Connection | null = null;
+  private isConnected = false;
+
+  private constructor() {}
+
+  public static getInstance(): MongoDBConnectionImpl {
+    if (!MongoDBConnectionImpl.instance) {
+      MongoDBConnectionImpl.instance = new MongoDBConnectionImpl();
+    }
+    return MongoDBConnectionImpl.instance;
+  }
+
+  /**
+   * Connect to MongoDB
+   */
+  async connect(config: DatabaseConfig): Promise<void> {
+    if (this.isConnected) {
+      console.log('MongoDB is already connected');
+      return;
+    }
+
+    try {
+      const defaultOptions: mongoose.ConnectOptions = {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        bufferCommands: false,
+        ...config.options
+      };
+
+      await mongoose.connect(config.uri, defaultOptions);
+      this.connection = mongoose.connection;
+      this.isConnected = true;
+
+      // Connection event handlers
+      this.connection.on('connected', () => {
+        console.log('MongoDB connected successfully');
+      });
+
+      this.connection.on('error', (error) => {
+        console.error('MongoDB connection error:', error);
+        this.isConnected = false;
+      });
+
+      this.connection.on('disconnected', () => {
+        console.log('MongoDB disconnected');
+        this.isConnected = false;
+      });
+
+      // Graceful shutdown
+      process.on('SIGINT', () => {
+        this.disconnect();
+      });
+
+      process.on('SIGTERM', () => {
+        this.disconnect();
+      });
+
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Disconnect from MongoDB
+   */
+  async disconnect(): Promise<void> {
+    if (!this.isConnected || !this.connection) {
+      return;
+    }
+
+    try {
+      await mongoose.disconnect();
+      this.isConnected = false;
+      this.connection = null;
+      console.log('MongoDB disconnected gracefully');
+    } catch (error) {
+      console.error('Error disconnecting from MongoDB:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get connection status
+   */
+  isConnectionReady(): boolean {
+    return this.isConnected && this.connection?.readyState === 1;
+  }
+
+  /**
+   * Get the current connection
+   */
+  getConnection(): Connection | null {
+    return this.connection;
+  }
+
+  /**
+   * Get connection state
+   */
+  getConnectionState(): string {
+    if (!this.connection) {
+      return 'disconnected';
+    }
+
+    switch (this.connection.readyState) {
+      case 0:
+        return 'disconnected';
+      case 1:
+        return 'connected';
+      case 2:
+        return 'connecting';
+      case 3:
+        return 'disconnecting';
+      default:
+        return 'unknown';
+    }
+  }
+}
+
+// Database Connection Factory - Technology Agnostic
+export class DatabaseConnectionFactory {
+  static create(type: 'mongodb' | 'postgresql' | 'mysql'): DatabaseConnection {
+    switch (type) {
+      case 'mongodb':
+        return MongoDBConnectionImpl.getInstance();
+      case 'postgresql':
+        throw new Error('PostgreSQL implementation not yet available');
+      case 'mysql':
+        throw new Error('MySQL implementation not yet available');
+      default:
+        throw new Error(`Unsupported database type: ${type}`);
+    }
+  }
+
+  static createMongoDB(): DatabaseConnection {
+    return MongoDBConnectionImpl.getInstance();
+  }
+}
+
+// Default configuration (can be overridden)
+export const defaultDatabaseConfig: DatabaseConfig = {
+  uri: process.env.DATABASE_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/<%= databaseName %>-db',
+  options: {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  }
+};
+
+// Legacy MongoDB-specific config for backwards compatibility
+export const defaultMongoConfig: MongoDBConfig = defaultDatabaseConfig;
+
+// Export singleton instance - Database Agnostic
+export const databaseConnection = DatabaseConnectionFactory.createMongoDB();
+
+// Legacy export for backwards compatibility
+export const mongoConnection = databaseConnection;
+
+/*
+ * Example Usage - Database Technology Agnostic:
+ * 
+ * // Option 1: Technology agnostic factory
+ * const dbConnection = DatabaseConnectionFactory.create('mongodb');
+ * await dbConnection.connect({
+ *   uri: 'mongodb://localhost:27017/<%= databaseName %>-db',
+ *   options: { maxPoolSize: 20 }
+ * });
+ * 
+ * // Option 2: Direct MongoDB (backwards compatible)
+ * await mongoConnection.connect(defaultMongoConfig);
+ * 
+ * // Option 3: Custom configuration
+ * await databaseConnection.connect({
+ *   uri: process.env.<%= databaseName.toUpperCase() %>_DB_URI,
+ *   options: { serverSelectionTimeoutMS: 10000 }
+ * });
+ * 
+ * // Future: PostgreSQL support
+ * // const pgConnection = DatabaseConnectionFactory.create('postgresql');
+ * // await pgConnection.connect({ uri: 'postgresql://localhost:5432/<%= databaseName %>' });
+ */

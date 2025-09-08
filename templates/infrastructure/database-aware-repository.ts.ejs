@@ -1,0 +1,411 @@
+import { injectable, inject } from 'inversify';
+import { TYPES } from '../types';
+import { DatabaseService } from '../database/database.service';
+import { I<%= schemaNames.pascalCase %>Repository } from '../../domain/<%= schemaNames.kebabCase %>/repositories/<%= schemaNames.kebabCase %>.repository.interface';
+import { <%= schemaNames.pascalCase %> } from '../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity';
+
+/**
+ * <%= schemaNames.pascalCase %> Repository using Database Technology Agnostic approach
+ * Database: <%= databaseName || 'main' %> (<%= databaseType || 'mongodb' %>)
+ * Upgraded from in-memory to database-aware implementation
+ * Generated on: <%= new Date().toISOString() %>
+ */
+@injectable()
+export class <%= schemaNames.pascalCase %>Repository implements I<%= schemaNames.pascalCase %>Repository {
+  constructor(
+    @inject(TYPES.DatabaseService) private databaseService: DatabaseService
+  ) {}
+
+  /**
+   * Get the database connection for <%= schemaNames.camelCase %> domain
+   * Uses '<%= databaseName || 'main' %>' database with <%= databaseType || 'mongodb' %> technology
+   */
+  private getConnection() {
+    return this.databaseService.getConnection('<%= databaseName || 'main' %>', '<%= databaseType || 'mongodb' %>');
+  }
+
+  async findById(id: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔍 Finding <%= schemaNames.camelCase %> by ID: ${id}`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> query using the connection
+<% if ((databaseType || 'mongodb') === 'mongodb') { -%>
+      // Example: const mongoRepo = container.get(TYPES.<%= schemaNames.pascalCase %>MongoRepository);
+      // return await mongoRepo.findById(id);
+<% } else if ((databaseType || 'mongodb') === 'postgresql') { -%>
+      // Example: const pgRepo = container.get(TYPES.<%= schemaNames.pascalCase %>PostgreSQLRepository);
+      // return await pgRepo.findById(id);
+<% } else if ((databaseType || 'mongodb') === 'mysql') { -%>
+      // Example: const mysqlRepo = container.get(TYPES.<%= schemaNames.pascalCase %>MySQLRepository);
+      // return await mysqlRepo.findById(id);
+<% } else { -%>
+      // Example: const <%= databaseType %>Repo = container.get(TYPES.<%= schemaNames.pascalCase %><%= (databaseType || 'mongodb').charAt(0).toUpperCase() + (databaseType || 'mongodb').slice(1) %>Repository);
+      // return await <%= databaseType %>Repo.findById(id);
+<% } -%>
+      
+      return null; // Placeholder
+    } catch (error) {
+      console.error('Error finding <%= schemaNames.camelCase %> by ID:', error);
+      throw error;
+    }
+  }
+
+  async findAll(): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔍 Finding all <%= schemaNames.camelCase %>s`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> query
+      return []; // Placeholder
+    } catch (error) {
+      console.error('Error finding all <%= schemaNames.camelCase %>s:', error);
+      throw error;
+    }
+  }
+
+  async save(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<<%= schemaNames.pascalCase %>> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`💾 Saving <%= schemaNames.camelCase %>`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> save operation
+      return <%= schemaNames.camelCase %>; // Placeholder
+    } catch (error) {
+      console.error('Error saving <%= schemaNames.camelCase %>:', error);
+      throw error;
+    }
+  }
+
+  async update(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<<%= schemaNames.pascalCase %>> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔄 Updating <%= schemaNames.camelCase %>`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> update operation
+      return <%= schemaNames.camelCase %>; // Placeholder
+    } catch (error) {
+      console.error('Error updating <%= schemaNames.camelCase %>:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🗑️ Deleting <%= schemaNames.camelCase %> with ID: ${id}`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> delete operation
+    } catch (error) {
+      console.error('Error deleting <%= schemaNames.camelCase %>:', error);
+      throw error;
+    }
+  }
+
+<% if (schemaNames.camelCase === 'user') { -%>
+  /**
+   * Find user by email (User-specific method)
+   */
+  async findByEmail(email: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔍 Finding user by email: ${email}`);
+      console.log(`📊 Connection (${connection.getConnectionState()}): <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %>`);
+      
+      // TODO: Implement actual <%= databaseType || 'mongodb' %> query by email
+      return null; // Placeholder
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Multi-database analytics example (User-specific method)
+   * Demonstrates accessing multiple databases for comprehensive user data
+   */
+  async getUserAnalytics(userId: string): Promise<any> {
+    try {
+      // Get user data from current database
+      const userConnection = this.getConnection();
+      console.log(`📊 Getting user from <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %> DB: ${userConnection.getConnectionState()}`);
+      
+      // Access other databases for comprehensive analytics
+      try {
+        const customersConnection = this.databaseService.getConnection('customers', 'mongodb');
+        console.log(`📊 Getting customer data from customers:mongodb DB: ${customersConnection.getConnectionState()}`);
+      } catch (error) {
+        console.log(`⚠️ Customers database not available: ${error.message}`);
+      }
+      
+      try {
+        const ordersConnection = this.databaseService.getConnection('orders', 'postgresql');
+        console.log(`📊 Getting orders from orders:postgresql DB: ${ordersConnection.getConnectionState()}`);
+      } catch (error) {
+        console.log(`⚠️ Orders database not available: ${error.message}`);
+      }
+      
+      return {
+        user: `User data from <%= databaseName || 'main' %>:<%= databaseType || 'mongodb' %> for ${userId}`,
+        customer: `Customer data from customers:mongodb for ${userId}`,
+        orders: `Order history from orders:postgresql for ${userId}`,
+        timestamp: new Date().toISOString(),
+        note: 'This demonstrates multi-database and multi-technology access capability'
+      };
+    } catch (error) {
+      console.error('Error getting user analytics:', error);
+      throw error;
+    }
+  }
+
+<% } -%>
+  /**
+   * Seed initial data (Development helper)
+   */
+  async seed(): Promise<void> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        console.warn('Database connection not ready, skipping seed operation');
+        return;
+      }
+
+      console.log(`🌱 Seeding initial <%= schemaNames.camelCase %> data...`);
+      console.log(`📊 Using <%= databaseType || 'mongodb' %> connection for <%= databaseName || 'main' %>`);
+      
+      // TODO: Implement actual seeding logic for <%= schemaNames.camelCase %> in <%= databaseType || 'mongodb' %>
+<% if ((databaseType || 'mongodb') === 'mongodb') { -%>
+      // MongoDB seeding example:
+      // const Model = connection.getNativeConnection().model('<%= schemaNames.pascalCase %>');
+      // await Model.insertMany(seedData);
+<% } else if ((databaseType || 'mongodb') === 'postgresql') { -%>
+      // PostgreSQL seeding example:
+      // const client = connection.getNativeConnection();
+      // await client.query('INSERT INTO <%= schemaNames.kebabCase %>s (name, description) VALUES ($1, $2)', [seedData]);
+<% } else if ((databaseType || 'mongodb') === 'mysql') { -%>
+      // MySQL seeding example:
+      // const connection = connection.getNativeConnection();
+      // await connection.query('INSERT INTO <%= schemaNames.kebabCase %>s (name, description) VALUES (?, ?)', [seedData]);
+<% } -%>
+      
+      console.log(`✅ <%= schemaNames.pascalCase %> seed data completed`);
+    } catch (error) {
+      console.error('Error seeding <%= schemaNames.camelCase %> data:', error);
+      throw error;
+    }
+  }
+}
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔍 Finding all <%= schemaNames.pluralReadable %>`);
+      console.log(`📊 Connection state: ${connection.getConnectionState()}`);
+      
+      // TODO: Implement actual MongoDB query
+      return []; // Placeholder
+    } catch (error) {
+      console.error('Error finding all <%= schemaNames.pluralReadable %>:', error);
+      throw error;
+    }
+  }
+
+  async save(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<<%= schemaNames.pascalCase %>> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`💾 Saving <%= schemaNames.readable %>`);
+      console.log(`📊 Connection state: ${connection.getConnectionState()}`);
+      
+      // TODO: Implement actual MongoDB save operation
+      return <%= schemaNames.camelCase %>; // Placeholder
+    } catch (error) {
+      console.error('Error saving <%= schemaNames.readable %>:', error);
+      throw error;
+    }
+  }
+
+  async update(<%= schemaNames.camelCase %>: <%= schemaNames.pascalCase %>): Promise<<%= schemaNames.pascalCase %>> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔄 Updating <%= schemaNames.readable %>`);
+      console.log(`📊 Connection state: ${connection.getConnectionState()}`);
+      
+      // TODO: Implement actual MongoDB update operation
+      return <%= schemaNames.camelCase %>; // Placeholder
+    } catch (error) {
+      console.error('Error updating <%= schemaNames.readable %>:', error);
+      throw error;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🗑️ Deleting <%= schemaNames.readable %> with ID: ${id}`);
+      console.log(`📊 Connection state: ${connection.getConnectionState()}`);
+      
+      // TODO: Implement actual MongoDB delete operation
+    } catch (error) {
+      console.error('Error deleting <%= schemaNames.readable %>:', error);
+      throw error;
+    }
+  }
+
+  <% if (schemaNames.camelCase === 'user') { %>
+  /**
+   * Find user by email (User-specific method)
+   */
+  async findByEmail(email: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        throw new Error('<%= schemaNames.pascalCase %> database connection is not ready');
+      }
+
+      console.log(`🔍 Finding user by email: ${email}`);
+      console.log(`📊 Connection state: ${connection.getConnectionState()}`);
+      
+      // TODO: Implement actual MongoDB query by email
+      return null; // Placeholder
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Multi-database analytics example (User-specific method)
+   * Demonstrates accessing multiple databases for comprehensive user data
+   */
+  async getUserAnalytics(userId: string): Promise<any> {
+    try {
+      // Get user data from main database (or current database)
+      const userConnection = this.getConnection();
+      console.log(`📊 Getting user from <%= databaseName || 'main' %> DB: ${userConnection.getConnectionState()}`);
+      
+      // Access other databases for comprehensive analytics
+      try {
+        const customersConnection = this.databaseService.getConnection('customers');
+        console.log(`📊 Getting customer data from customers DB: ${customersConnection.getConnectionState()}`);
+      } catch (error) {
+        console.log(`⚠️ Customers database not available: ${error.message}`);
+      }
+      
+      try {
+        const ordersConnection = this.databaseService.getConnection('orders');
+        console.log(`📊 Getting orders from orders DB: ${ordersConnection.getConnectionState()}`);
+      } catch (error) {
+        console.log(`⚠️ Orders database not available: ${error.message}`);
+      }
+      
+      return {
+        user: `User data from <%= databaseName || 'main' %> DB for ${userId}`,
+        customer: `Customer data from customers DB for ${userId}`,
+        orders: `Order history from orders DB for ${userId}`,
+        timestamp: new Date().toISOString(),
+        note: 'This demonstrates multi-database access capability'
+      };
+    } catch (error) {
+      console.error('Error getting user analytics:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Seed initial data (Development helper)
+   */
+  async seed(): Promise<void> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        console.warn('Database connection not ready, skipping seed operation');
+        return;
+      }
+
+      console.log(`🌱 Seeding initial <%= schemaNames.readable %> data...`);
+      
+      // TODO: Implement actual seeding logic
+      console.log(`✅ <%= schemaNames.pascalCase %> seed data completed`);
+    } catch (error) {
+      console.error('Error seeding <%= schemaNames.readable %> data:', error);
+      throw error;
+    }
+  }
+  <% } else { %>
+  /**
+   * Seed initial data (Development helper)
+   */
+  async seed(): Promise<void> {
+    try {
+      const connection = this.getConnection();
+      
+      if (!connection.isConnectionReady()) {
+        console.warn('Database connection not ready, skipping seed operation');
+        return;
+      }
+
+      console.log(`🌱 Seeding initial <%= schemaNames.readable %> data...`);
+      
+      // TODO: Implement actual seeding logic for <%= schemaNames.readable %>
+      console.log(`✅ <%= schemaNames.pascalCase %> seed data completed`);
+    } catch (error) {
+      console.error('Error seeding <%= schemaNames.readable %> data:', error);
+      throw error;
+    }
+  }
+  <% } %>
+}

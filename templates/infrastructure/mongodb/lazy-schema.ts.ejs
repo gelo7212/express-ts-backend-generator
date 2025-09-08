@@ -1,0 +1,125 @@
+import mongoose, { Schema } from 'mongoose';
+
+/**
+ * <%= schemaNames.pascalCase %> Mongoose Schema Definition
+ * Optimized for MongoDB with native features
+ * Generated on: <%= new Date().toISOString() %>
+ */
+
+// Enhanced schema definition with MongoDB optimizations
+export const <%= schemaNames.camelCase %>Schema = new Schema({
+<% fields.forEach((field, index) => { -%>
+  <%= field.name %>: {
+    type: <%= field.schemaDefinition.type %>,<% if (field.schemaDefinition.required) { %>
+    required: <%= field.schemaDefinition.required %>,<% } %><% if (field.schemaDefinition.unique) { %>
+    unique: <%= field.schemaDefinition.unique %>,<% } %><% if (field.schemaDefinition.index) { %>
+    index: <%= field.schemaDefinition.index %>,<% } %><% if (field.schemaDefinition.default !== undefined) { %>
+    default: <%= JSON.stringify(field.schemaDefinition.default) %>,<% } %><% if (field.schemaDefinition.validate) { %>
+    validate: <%= field.schemaDefinition.validate %>,<% } %><% if (field.schemaDefinition.trim) { %>
+    trim: <%= field.schemaDefinition.trim %>,<% } %><% if (field.schemaDefinition.lowercase) { %>
+    lowercase: <%= field.schemaDefinition.lowercase %>,<% } %><% if (field.schemaDefinition.uppercase) { %>
+    uppercase: <%= field.schemaDefinition.uppercase %>,<% } %><% if (field.schemaDefinition.minlength) { %>
+    minlength: <%= field.schemaDefinition.minlength %>,<% } %><% if (field.schemaDefinition.maxlength) { %>
+    maxlength: <%= field.schemaDefinition.maxlength %>,<% } %><% if (field.schemaDefinition.min) { %>
+    min: <%= field.schemaDefinition.min %>,<% } %><% if (field.schemaDefinition.max) { %>
+    max: <%= field.schemaDefinition.max %>,<% } %><% if (field.schemaDefinition.enum) { %>
+    enum: <%= JSON.stringify(field.schemaDefinition.enum) %>,<% } %>
+  },
+<% }) -%>
+  
+  // MongoDB-specific enhanced fields
+  profile: {
+    preferences: {
+      language: { type: String, default: 'en' },
+      timezone: { type: String, default: 'UTC' },
+      notifications: {
+        email: { type: Boolean, default: true },
+        push: { type: Boolean, default: true },
+        sms: { type: Boolean, default: false }
+      }
+    }
+  },
+  roles: [{ type: String, default: ['<%= schemaNames.camelCase %>'] }],
+  metadata: { type: Map, of: Schema.Types.Mixed, default: new Map() }
+}, {
+  <% if (timestamps) { %>timestamps: true,<% } %>
+  // MongoDB optimizations
+  versionKey: false, // Disable __v field
+  toJSON: { 
+    virtuals: true,
+    transform: function(doc: any, ret: any) {
+      if (ret.__v !== undefined) delete ret.__v;
+      ret.id = ret._id;
+      if (ret._id !== undefined) delete ret._id;
+      return ret;
+    }
+  },
+  toObject: { virtuals: true }
+});
+
+<% if (indexes && indexes.length > 0) { %>
+// Database indexes for performance
+<% indexes.forEach(index => { %>
+<%= schemaNames.camelCase %>Schema.index(<%= JSON.stringify(index.fields) %><%= index.options ? ', ' + JSON.stringify(index.options) : '' %>);
+<% }) %>
+<% } %>
+
+// Common indexes for performance
+<%= schemaNames.camelCase %>Schema.index({ email: 1 }, { unique: true });
+<%= schemaNames.camelCase %>Schema.index({ isActive: 1 });
+<%= schemaNames.camelCase %>Schema.index({ createdAt: -1 });
+<%= schemaNames.camelCase %>Schema.index({ 'profile.preferences.language': 1 });
+
+<% if (virtuals && virtuals.length > 0) { %>
+// Virtual fields
+<% virtuals.forEach(virtual => { %>
+<%= schemaNames.camelCase %>Schema.virtual('<%= virtual.name %>').get(function() {
+  return <%= virtual.getter %>;
+});
+<% }) %>
+<% } %>
+
+<% if (methods && methods.length > 0) { %>
+// Instance methods
+<% methods.forEach(method => { %>
+<%= schemaNames.camelCase %>Schema.methods.<%= method.name %> = function(<%= method.params || '' %>) {
+  <%= method.body %>
+};
+<% }) %>
+<% } %>
+
+<% if (statics && statics.length > 0) { %>
+// Static methods with MongoDB features
+<% statics.forEach(staticMethod => { %>
+<%= schemaNames.camelCase %>Schema.statics.<%= staticMethod.name %> = function(<%= staticMethod.params || '' %>) {
+  <%= staticMethod.body %>
+};
+<% }) %>
+<% } %>
+
+// Built-in static methods for common queries
+<%= schemaNames.camelCase %>Schema.statics.findByEmail = function(email: string) {
+  return this.findOne({ email }).exec();
+};
+
+<%= schemaNames.camelCase %>Schema.statics.findActive = function() {
+  return this.find({ isActive: true }).exec();
+};
+
+<%= schemaNames.camelCase %>Schema.statics.searchByName = function(searchTerm: string) {
+  return this.find({ 
+    name: { $regex: searchTerm, $options: 'i' } 
+  }).exec();
+};
+
+<%= schemaNames.camelCase %>Schema.statics.findByRole = function(role: string) {
+  return this.find({ 
+    roles: { $in: [role] } 
+  }).exec();
+};
+
+<%= schemaNames.camelCase %>Schema.statics.findByLanguage = function(language: string) {
+  return this.find({ 
+    'profile.preferences.language': language 
+  }).exec();
+};

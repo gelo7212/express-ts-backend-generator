@@ -1,0 +1,162 @@
+import mongoose, { ConnectOptions } from 'mongoose';
+
+/**
+ * MongoDB Connection Manager
+ * Generated on: <%= new Date().toISOString() %>
+ */
+
+export interface MongoConnectionConfig {
+  uri: string;
+  options?: ConnectOptions;
+  name?: string;
+}
+
+export class MongoDBConnection {
+  private static connections: Map<string, mongoose.Connection> = new Map();
+  private static isInitialized = false;
+
+  /**
+   * Initialize MongoDB connections
+   */
+  static async initialize(configs: MongoConnectionConfig[]): Promise<void> {
+    if (this.isInitialized) {
+      console.log('MongoDB connections already initialized');
+      return;
+    }
+
+    try {
+      for (const config of configs) {
+        await this.createConnection(config);
+      }
+      this.isInitialized = true;
+      console.log('MongoDB connections initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize MongoDB connections:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a single connection
+   */
+  static async createConnection(config: MongoConnectionConfig): Promise<mongoose.Connection> {
+    const connectionName = config.name || 'default';
+    
+    try {
+      console.log(`Connecting to MongoDB: ${connectionName}`);
+      
+      const defaultOptions: ConnectOptions = {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        family: 4,
+        ...config.options
+      };
+
+      const connection = mongoose.createConnection(config.uri, defaultOptions);
+      
+      connection.on('connected', () => {
+        console.log(`MongoDB connected: ${connectionName}`);
+      });
+
+      connection.on('error', (error) => {
+        console.error(`MongoDB connection error (${connectionName}):`, error);
+      });
+
+      connection.on('disconnected', () => {
+        console.log(`MongoDB disconnected: ${connectionName}`);
+      });
+
+      await connection.asPromise();
+      this.connections.set(connectionName, connection);
+      
+      return connection;
+    } catch (error) {
+      console.error(`Failed to connect to MongoDB (${connectionName}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a connection by name
+   */
+  static getConnection(name: string = 'default'): mongoose.Connection | undefined {
+    return this.connections.get(name);
+  }
+
+  /**
+   * Close all connections
+   */
+  static async closeAll(): Promise<void> {
+    try {
+      const closePromises = Array.from(this.connections.values()).map(
+        connection => connection.close()
+      );
+      
+      await Promise.all(closePromises);
+      this.connections.clear();
+      this.isInitialized = false;
+      console.log('All MongoDB connections closed');
+    } catch (error) {
+      console.error('Error closing MongoDB connections:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Close a specific connection
+   */
+  static async closeConnection(name: string): Promise<void> {
+    const connection = this.connections.get(name);
+    if (connection) {
+      await connection.close();
+      this.connections.delete(name);
+      console.log(`MongoDB connection closed: ${name}`);
+    }
+  }
+
+  /**
+   * Get all connection names
+   */
+  static getConnectionNames(): string[] {
+    return Array.from(this.connections.keys());
+  }
+
+  /**
+   * Check if connections are initialized
+   */
+  static isConnected(): boolean {
+    return this.isInitialized && this.connections.size > 0;
+  }
+
+  /**
+   * Health check for all connections
+   */
+  static async healthCheck(): Promise<Record<string, boolean>> {
+    const results: Record<string, boolean> = {};
+    
+    for (const [name, connection] of this.connections) {
+      try {
+        // Simple ping to check connection
+        await connection.db.admin().ping();
+        results[name] = true;
+      } catch (error) {
+        results[name] = false;
+        console.error(`Health check failed for connection ${name}:`, error);
+      }
+    }
+    
+    return results;
+  }
+}
+
+// Export default connection helper
+export const getDefaultConnection = (): mongoose.Connection => {
+  const connection = MongoDBConnection.getConnection('default');
+  if (!connection) {
+    throw new Error('Default MongoDB connection not found. Make sure to initialize connections first.');
+  }
+  return connection;
+};
+
+export default MongoDBConnection;

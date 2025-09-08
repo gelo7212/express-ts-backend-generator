@@ -1,0 +1,103 @@
+{
+  "schemaName": "User",
+  "fields": [
+    {
+      "name": "username",
+      "type": "String",
+      "required": true,
+      "unique": true,
+      "minLength": 3,
+      "maxLength": 20,
+      "description": "Unique username"
+    },
+    {
+      "name": "email",
+      "type": "String",
+      "required": true,
+      "unique": true,
+      "description": "User email address",
+      "validate": {
+        "validator": "function(v) { return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v); }",
+        "message": "Invalid email format"
+      }
+    },
+    {
+      "name": "password",
+      "type": "String",
+      "required": true,
+      "minLength": 8,
+      "description": "User password (hashed)"
+    },
+    {
+      "name": "profile",
+      "type": "Mixed",
+      "required": false,
+      "description": "User profile information"
+    },
+    {
+      "name": "roles",
+      "type": "Array",
+      "default": "['user']",
+      "description": "User roles"
+    },
+    {
+      "name": "isActive",
+      "type": "Boolean",
+      "default": true,
+      "description": "Whether user account is active"
+    },
+    {
+      "name": "lastLogin",
+      "type": "Date",
+      "required": false,
+      "description": "Last login timestamp"
+    }
+  ],
+  "generateTimestamps": true,
+  "generateVirtuals": false,
+  "generateIndexes": true,
+  "generateMethods": true,
+  "generateStatics": true,
+  "indexes": [
+    {
+      "fields": { "email": 1 },
+      "options": { "unique": true, "background": true }
+    },
+    {
+      "fields": { "username": 1 },
+      "options": { "unique": true, "background": true }
+    },
+    {
+      "fields": { "isActive": 1, "lastLogin": -1 },
+      "options": { "background": true }
+    }
+  ],
+  "instanceMethods": [
+    {
+      "name": "updateLastLogin",
+      "params": "",
+      "body": "this.lastLogin = new Date(); return this.save();",
+      "returnType": "Promise<IUserDocument>"
+    },
+    {
+      "name": "hasRole",
+      "params": "role: string",
+      "body": "return this.roles.includes(role);",
+      "returnType": "boolean"
+    }
+  ],
+  "staticMethods": [
+    {
+      "name": "findByEmail",
+      "params": "email: string",
+      "body": "return this.findOne({ email });",
+      "returnType": "Promise<IUserDocument | null>"
+    },
+    {
+      "name": "findActiveUsers",
+      "params": "",
+      "body": "return this.find({ isActive: true });",
+      "returnType": "Promise<IUserDocument[]>"
+    }
+  ]
+}

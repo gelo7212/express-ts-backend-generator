@@ -1,0 +1,96 @@
+import mongoose, { Connection } from 'mongoose';
+import { DatabaseConnection, DatabaseConnectionConfig } from '../database-connection.interface';
+
+/**
+ * MongoDB Connection Implementation
+ * Simple, clean implementation of DatabaseConnection for MongoDB
+ * Generated on: <%= new Date().toISOString() %>
+ */
+export class MongoDbConnection implements DatabaseConnection {
+  private config: DatabaseConnectionConfig;
+  private connection: Connection | null = null;
+
+  constructor(config: DatabaseConnectionConfig) {
+    this.config = config;
+  }
+
+  async connect(): Promise<void> {
+    try {
+      const uri = this.buildConnectionUri();
+      
+      console.log(`Connecting to MongoDB: ${uri}`);
+      
+      const options = {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        ...this.config.options
+      };
+
+      this.connection = await mongoose.createConnection(uri, options);
+      
+      this.connection.on('error', (error: any) => {
+        console.error('MongoDB connection error:', error);
+      });
+
+      this.connection.on('disconnected', () => {
+        console.log('MongoDB disconnected');
+      });
+
+      console.log('MongoDB connected successfully');
+    } catch (error) {
+      console.error('Failed to connect to MongoDB:', error);
+      throw error;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.connection) {
+      await this.connection.close();
+      this.connection = null;
+      console.log('MongoDB connection closed');
+    }
+  }
+
+  isConnectionReady(): boolean {
+    return this.connection?.readyState === 1;
+  }
+
+  getConnectionState(): string {
+    if (!this.connection) return 'disconnected';
+    
+    switch (this.connection.readyState) {
+      case 0: return 'disconnected';
+      case 1: return 'connected';
+      case 2: return 'connecting';
+      case 3: return 'disconnecting';
+      default: return 'unknown';
+    }
+  }
+
+  getNativeConnection(): any {
+    return this.connection;
+  }
+
+  getConfig(): DatabaseConnectionConfig {
+    return this.config;
+  }
+
+  private buildConnectionUri(): string {
+    const { host = 'localhost', port = 27017, database, username, password } = this.config;
+    
+    let uri = 'mongodb://';
+    
+    if (username && password) {
+      uri += `${username}:${password}@`;
+    }
+    
+    uri += `${host}:${port}`;
+    
+    if (database) {
+      uri += `/${database}`;
+    }
+    
+    return uri;
+  }
+}

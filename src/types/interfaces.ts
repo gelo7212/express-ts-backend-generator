@@ -133,7 +133,9 @@ export type GeneratorType =
   | 'service'
   | 'controller'
   | 'dto'
-  | 'presentation-http';
+  | 'presentation-http'
+  | 'mongodb-schema'
+  | 'mongodb-lazy';
 
 export interface NamingConventions {
   camelCase: string;

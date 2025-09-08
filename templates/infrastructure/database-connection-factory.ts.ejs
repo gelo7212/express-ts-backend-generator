@@ -1,0 +1,45 @@
+import { DatabaseConnection, DatabaseConnectionConfig } from './database-connection.interface';
+import { MongoDbConnection } from './mongodb/mongodb-connection';
+
+/**
+ * Database Connection Factory
+ * Creates connections based on database type
+ * Generated on: <%= new Date().toISOString() %>
+ */
+export class DatabaseConnectionFactory {
+  /**
+   * Create a database connection based on configuration
+   */
+  static create(config: DatabaseConnectionConfig): DatabaseConnection {
+    switch (config.type) {
+      case 'mongodb':
+        return new MongoDbConnection(config);
+      
+      case 'postgresql':
+        throw new Error('PostgreSQL support not implemented yet');
+      
+      case 'mysql':
+        throw new Error('MySQL support not implemented yet');
+      
+      case 'sqlite':
+        throw new Error('SQLite support not implemented yet');
+      
+      default:
+        throw new Error(`Unsupported database type: ${config.type}`);
+    }
+  }
+
+  /**
+   * Get supported database types
+   */
+  static getSupportedTypes(): string[] {
+    return ['mongodb', 'postgresql', 'mysql', 'sqlite'];
+  }
+
+  /**
+   * Check if a database type is supported
+   */
+  static isSupported(type: string): boolean {
+    return this.getSupportedTypes().includes(type);
+  }
+}

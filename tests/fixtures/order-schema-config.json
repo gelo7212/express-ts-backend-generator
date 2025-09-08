@@ -1,0 +1,113 @@
+{
+  "schemaName": "Order",
+  "fields": [
+    {
+      "name": "customerId",
+      "type": "ObjectId",
+      "required": true,
+      "description": "Reference to customer"
+    },
+    {
+      "name": "items",
+      "type": "Array",
+      "required": true,
+      "description": "Order items",
+      "schema": {
+        "productId": { "type": "ObjectId", "required": true },
+        "quantity": { "type": "Number", "required": true, "min": 1 },
+        "price": { "type": "Number", "required": true, "min": 0 }
+      }
+    },
+    {
+      "name": "totalAmount",
+      "type": "Number",
+      "required": true,
+      "min": 0,
+      "description": "Total order amount"
+    },
+    {
+      "name": "status",
+      "type": "String",
+      "required": true,
+      "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      "default": "pending",
+      "description": "Order status"
+    },
+    {
+      "name": "shippingAddress",
+      "type": "Mixed",
+      "required": true,
+      "description": "Shipping address details"
+    },
+    {
+      "name": "orderDate",
+      "type": "Date",
+      "required": true,
+      "default": "Date.now",
+      "description": "Date when order was placed"
+    },
+    {
+      "name": "deliveryDate",
+      "type": "Date",
+      "required": false,
+      "description": "Expected delivery date"
+    }
+  ],
+  "generateTimestamps": true,
+  "generateVirtuals": true,
+  "generateIndexes": true,
+  "generateMethods": true,
+  "generateStatics": true,
+  "virtuals": [
+    {
+      "name": "itemCount",
+      "getter": "return this.items.length;"
+    },
+    {
+      "name": "isDelivered",
+      "getter": "return this.status === 'delivered';"
+    }
+  ],
+  "indexes": [
+    {
+      "fields": { "customerId": 1 },
+      "options": { "background": true }
+    },
+    {
+      "fields": { "status": 1, "orderDate": -1 },
+      "options": { "background": true }
+    },
+    {
+      "fields": { "orderDate": -1 },
+      "options": { "background": true }
+    }
+  ],
+  "instanceMethods": [
+    {
+      "name": "calculateTotal",
+      "params": "",
+      "body": "return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);",
+      "returnType": "number"
+    },
+    {
+      "name": "markAsShipped",
+      "params": "",
+      "body": "this.status = 'shipped'; return this.save();",
+      "returnType": "Promise<IOrderDocument>"
+    }
+  ],
+  "staticMethods": [
+    {
+      "name": "findByCustomer",
+      "params": "customerId: string",
+      "body": "return this.find({ customerId });",
+      "returnType": "Promise<IOrderDocument[]>"
+    },
+    {
+      "name": "findByStatus",
+      "params": "status: string",
+      "body": "return this.find({ status });",
+      "returnType": "Promise<IOrderDocument[]>"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+import { Schema, SchemaTypes, Types } from 'mongoose';
+
+/**
+ * <%= schemaNames.pascalCase %> Schema Definition - Database Technology Agnostic
+ * Generated on: <%= new Date().toISOString() %>
+ * Database: <%= databaseName %>
+ * 
+ * This schema works with the database agnostic architecture.
+ * Can be adapted for different database technologies through
+ * the DatabaseConnectionFactory pattern.
+ */
+
+// Interface for the <%= schemaNames.pascalCase %> document
+export interface I<%= schemaNames.pascalCase %>Document {
+<% fields.forEach(function(field) { -%>
+  <%= field.name %><%= field.required === false ? '?' : '' %>: <%= getMongooseTypeScript(field.type) %>;
+<% }) -%>
+<% if (generateTimestamps) { -%>
+  createdAt?: Date;
+  updatedAt?: Date;
+<% } -%>
+}
+
+// Schema definition
+const <%= schemaNames.camelCase %>Schema = new Schema<I<%= schemaNames.pascalCase %>Document>({
+<% fields.forEach(function(field, index) { -%>
+  <%= field.name %>: {
+    type: <%= getMongooseSchemaType(field.type) %>,
+<% if (field.required !== false) { -%>
+    required: true,
+<% } -%>
+<% if (field.default !== undefined) { -%>
+    default: <%- typeof field.default === 'string' ? "'" + field.default + "'" : field.default %>,
+<% } -%>
+<% if (field.unique === true) { -%>
+    unique: true,
+<% } -%>
+<% if (field.index === true) { -%>
+    index: true,
+<% } -%>
+<% if (field.minLength !== undefined) { -%>
+    minLength: <%= field.minLength %>,
+<% } -%>
+<% if (field.maxLength !== undefined) { -%>
+    maxLength: <%= field.maxLength %>,
+<% } -%>
+<% if (field.min !== undefined) { -%>
+    min: <%= field.min %>,
+<% } -%>
+<% if (field.max !== undefined) { -%>
+    max: <%= field.max %>,
+<% } -%>
+<% if (field.enum && Array.isArray(field.enum)) { -%>
+    enum: [<%- field.enum.map(e => "'" + e + "'").join(', ') %>],
+<% } -%>
+<% if (field.validate && field.validate.validator) { -%>
+    validate: {
+      validator: <%- field.validate.validator %>,
+      message: '<%- field.validate.message || field.name + " validation failed" %>'
+    },
+<% } -%>
+  }<%= index < fields.length - 1 ? ',' : '' %>
+<% }) -%>
+}<% if (generateTimestamps) { %>, {
+  timestamps: true
+}<% } %>);
+
+<% if (generateIndexes && indexes && indexes.length > 0) { -%>
+// Indexes
+<% indexes.forEach(function(index) { -%>
+<%- schemaNames.camelCase %>Schema.index(<%- JSON.stringify(index.fields) %><%- index.options ? ', ' + JSON.stringify(index.options) : '' %>);
+<% }) -%>
+
+<% } -%>
+<% if (generateVirtuals && virtuals && virtuals.length > 0) { -%>
+// Virtual fields
+<% virtuals.forEach(function(virtual) { -%>
+<%- schemaNames.camelCase %>Schema.virtual('<%- virtual.name %>')
+  .get(function(this: I<%- schemaNames.pascalCase %>Document) {
+    <%- virtual.getter %>
+  });
+
+<% }) -%>
+<% } -%>
+<% if (generateMethods && instanceMethods && instanceMethods.length > 0) { -%>
+// Instance methods
+<% instanceMethods.forEach(function(method) { -%>
+<%- schemaNames.camelCase %>Schema.methods.<%- method.name %> = function(<%- method.params || '' %>) {
+  <%- method.body %>
+};
+
+<% }) -%>
+<% } -%>
+<% if (generateStatics && staticMethods && staticMethods.length > 0) { -%>
+// Static methods
+<% staticMethods.forEach(function(method) { -%>
+<%- schemaNames.camelCase %>Schema.statics.<%- method.name %> = function(<%- method.params || '' %>) {
+  <%- method.body %>
+};
+
+<% }) -%>
+<% } -%>
+// Pre-save middleware
+<%= schemaNames.camelCase %>Schema.pre('save', function(next) {
+  // Add any pre-save logic here
+  next();
+});
+
+// Post-save middleware
+<%= schemaNames.camelCase %>Schema.post('save', function(doc) {
+  // Add any post-save logic here
+  console.log(`<%= schemaNames.pascalCase %> saved: ${doc._id}`);
+});
+
+export { <%= schemaNames.camelCase %>Schema };
+
+<%
+// Helper functions for template
+function getMongooseTypeScript(type) {
+  const typeMap = {
+    'String': 'string',
+    'Number': 'number',
+    'Date': 'Date',
+    'Boolean': 'boolean',
+    'ObjectId': 'Types.ObjectId',
+    'Array': 'any[]',
+    'Mixed': 'any',
+    'Buffer': 'Buffer',
+    'Decimal128': 'number',
+    'Map': 'Map<string, any>'
+  };
+  return typeMap[type] || 'any';
+}
+
+function getMongooseSchemaType(type) {
+  const typeMap = {
+    'String': 'String',
+    'Number': 'Number',
+    'Date': 'Date',
+    'Boolean': 'Boolean',
+    'ObjectId': 'SchemaTypes.ObjectId',
+    'Array': 'SchemaTypes.Mixed',
+    'Mixed': 'SchemaTypes.Mixed',
+    'Buffer': 'Buffer',
+    'Decimal128': 'SchemaTypes.Decimal128',
+    'Map': 'Map'
+  };
+  return typeMap[type] || 'SchemaTypes.Mixed';
+}
+%>

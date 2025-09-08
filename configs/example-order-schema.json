@@ -1,0 +1,114 @@
+{
+  "schemaName": "Order",
+  "generateTimestamps": true,
+  "generateVirtuals": true,
+  "generateIndexes": true,
+  "generateMethods": true,
+  "generateStatics": false,
+  "generateRepository": true,
+  "generateConnection": true,
+  "domainName": "order",
+  "fields": [
+    {
+      "name": "orderNumber",
+      "type": "String",
+      "required": true,
+      "unique": true,
+      "description": "Unique order identifier"
+    },
+    {
+      "name": "customerId",
+      "type": "ObjectId",
+      "required": true,
+      "index": true,
+      "description": "Reference to customer"
+    },
+    {
+      "name": "items",
+      "type": "Array",
+      "required": true,
+      "description": "Order items"
+    },
+    {
+      "name": "totalAmount",
+      "type": "Number",
+      "required": true,
+      "min": 0,
+      "description": "Total order amount"
+    },
+    {
+      "name": "status",
+      "type": "String",
+      "required": true,
+      "enum": ["pending", "processing", "completed", "cancelled"],
+      "default": "pending",
+      "description": "Order status"
+    },
+    {
+      "name": "shippingAddress",
+      "type": "Mixed",
+      "required": true,
+      "description": "Shipping address object"
+    },
+    {
+      "name": "orderDate",
+      "type": "Date",
+      "required": true,
+      "default": "Date.now",
+      "description": "Date when order was placed"
+    },
+    {
+      "name": "deliveryDate",
+      "type": "Date",
+      "required": false,
+      "description": "Expected delivery date"
+    },
+    {
+      "name": "notes",
+      "type": "String",
+      "required": false,
+      "maxLength": 500,
+      "description": "Additional order notes"
+    }
+  ],
+  "indexes": [
+    {
+      "fields": { "customerId": 1, "orderDate": -1 },
+      "options": { "name": "customer_order_date_idx" }
+    },
+    {
+      "fields": { "status": 1 },
+      "options": { "name": "status_idx" }
+    }
+  ],
+  "virtuals": [
+    {
+      "name": "isCompleted",
+      "getter": "return this.status === 'completed';"
+    },
+    {
+      "name": "isPending",
+      "getter": "return this.status === 'pending';"
+    }
+  ],
+  "instanceMethods": [
+    {
+      "name": "markAsCompleted",
+      "params": "",
+      "body": "this.status = 'completed'; return this.save();"
+    },
+    {
+      "name": "calculateTotal",
+      "params": "",
+      "body": "return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);"
+    }
+  ],
+  "staticMethods": [
+    {
+      "name": "findByCustomer",
+      "params": "customerId: string",
+      "returnType": "Promise<IOrderDocument[]>",
+      "body": "return this.find({ customerId }).exec();"
+    }
+  ]
+}
