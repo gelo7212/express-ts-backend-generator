@@ -1,0 +1,120 @@
+import { Model, ModelStatic } from 'sequelize';
+import { <%= schemaNames.pascalCase %> } from '<% if (sharedDomain) { %>../../../../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity<% } else { %>../../../../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity<% } %>';
+<% if (sharedDomain) { -%>
+import { <%= sharedDomainNames.camelCase %>MySqlConnection } from '../shared-connection';
+<% } else { -%>
+import { <%= schemaNames.camelCase %>MySqlConnection } from '../lazy-connection';
+<% } -%>
+import { <%= schemaNames.pascalCase %>Schema, <%= schemaNames.pascalCase %>ModelOptions } from '../schemas/<%= schemaNames.kebabCase %>-schema';
+
+/**
+ * Sequelize model interface for <%= schemaNames.pascalCase %>
+ */
+export interface I<%= schemaNames.pascalCase %>Model extends Model {
+<% fields.forEach(field => { -%>
+  <%= field.name %>: <%= field.type === 'string' || field.type === 'text' ? 'string' : field.type === 'number' || field.type === 'float' || field.type === 'decimal' ? 'number' : field.type === 'boolean' ? 'boolean' : field.type === 'date' ? 'Date' : field.type === 'json' ? 'any' : 'string' %>;
+<% }); -%>
+<% if (timestamps) { -%>
+  created_at?: Date;
+  updated_at?: Date;
+<% } -%>
+<% if (methods && methods.length > 0) { -%>
+
+  // Instance methods
+<% methods.forEach(method => { -%>
+  <%= method.name %>(): <%= method.returnType || 'void' %>;
+<% }); -%>
+<% } -%>
+}
+
+/**
+ * Sequelize model type for <%= schemaNames.pascalCase %>
+ */
+export type <%= schemaNames.pascalCase %>ModelType = ModelStatic<I<%= schemaNames.pascalCase %>Model>;
+
+/**
+ * Get <%= schemaNames.pascalCase %> Sequelize model
+ * Lazy initialization - creates model when first accessed
+ */
+let <%= schemaNames.camelCase %>Model: <%= schemaNames.pascalCase %>ModelType | null = null;
+
+export async function get<%= schemaNames.pascalCase %>Model(): Promise<<%= schemaNames.pascalCase %>ModelType> {
+  if (<%= schemaNames.camelCase %>Model) {
+    return <%= schemaNames.camelCase %>Model;
+  }
+
+<% if (sharedDomain) { -%>
+  const sequelize = await <%= sharedDomainNames.camelCase %>MySqlConnection.getConnection();
+<% } else { -%>
+  const sequelize = await <%= schemaNames.camelCase %>MySqlConnection.getConnection();
+<% } -%>
+  
+  <%= schemaNames.camelCase %>Model = sequelize.define<I<%= schemaNames.pascalCase %>Model>(
+    '<%= schemaNames.pascalCase %>',
+    <%= schemaNames.pascalCase %>Schema,
+    <%= schemaNames.pascalCase %>ModelOptions
+  ) as <%= schemaNames.pascalCase %>ModelType;
+
+<% if (methods && methods.length > 0) { -%>
+  // Add instance methods
+<% methods.forEach(method => { -%>
+  <%= schemaNames.camelCase %>Model.prototype.<%= method.name %> = function() {
+    // TODO: Implement <%= method.name %> method
+    <%= method.implementation || `throw new Error('${method.name} method not implemented');` %>
+  };
+<% }); -%>
+<% } -%>
+
+<% if (statics && statics.length > 0) { -%>
+  // Add static methods
+<% statics.forEach(staticMethod => { -%>
+  <%= schemaNames.camelCase %>Model.<%= staticMethod.name %> = function() {
+    // TODO: Implement <%= staticMethod.name %> static method
+    <%= staticMethod.implementation || `throw new Error('${staticMethod.name} static method not implemented');` %>
+  };
+<% }); -%>
+<% } -%>
+
+<% if (virtuals && virtuals.length > 0) { -%>
+  // Add virtual fields
+<% virtuals.forEach(virtual => { -%>
+  <%= schemaNames.camelCase %>Model.addHook('afterFind', (instance: any) => {
+    if (instance) {
+      // Add virtual field: <%= virtual.name %>
+      instance.dataValues.<%= virtual.name %> = <%= virtual.getter || `'virtual_${virtual.name}'` %>;
+    }
+  });
+<% }); -%>
+<% } -%>
+
+  return <%= schemaNames.camelCase %>Model;
+}
+
+/**
+ * Convert Sequelize model instance to domain entity
+ */
+export function toDomainEntity(model: I<%= schemaNames.pascalCase %>Model): <%= schemaNames.pascalCase %> {
+  return new <%= schemaNames.pascalCase %>({
+<% fields.filter(f => f.name !== 'id').forEach((field, index) => { -%>
+    <%= field.name %>: model.<%= field.name %>,
+<% }); -%>
+    createdAt: model.created_at,
+    updatedAt: model.updated_at
+  }, model.id);
+}
+
+/**
+ * Convert domain entity to Sequelize model data
+ */
+export function fromDomainEntity(entity: <%= schemaNames.pascalCase %>): Partial<I<%= schemaNames.pascalCase %>Model> {
+  return {
+    id: entity.id,
+<% fields.filter(f => f.name !== 'id').forEach((field, index) => { -%>
+    <%= field.name %>: entity.<%= field.name %>,
+<% }); -%>
+    created_at: entity.createdAt,
+    updated_at: entity.updatedAt
+  };
+}
+
+export default get<%= schemaNames.pascalCase %>Model;

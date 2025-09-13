@@ -10,3 +10,4 @@ export * from './service-generator';
 export * from './value-object-generator';
 export * from './presentation-http-generator';
 export * from './mongodb-lazy-generator';
+export * from './mysql-lazy-generator';

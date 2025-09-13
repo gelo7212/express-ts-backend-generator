@@ -1,0 +1,98 @@
+{
+  "type": "mysql-lazy",
+  "name": "MySQL Lazy Loading Generator",
+  "description": "Generates MySQL implementation with lazy loading pattern using Sequelize (no database abstractions)",
+  "outputDir": "src/infrastructure/database",
+  "templates": [
+    {
+      "name": "shared-connection",
+      "description": "Shared MySQL connection manager for domain",
+      "templatePath": "infrastructure/mysql/shared-connection.ts.ejs",
+      "outputPath": "mysql/shared-connection.ts",
+      "condition": "sharedDomain"
+    },
+    {
+      "name": "lazy-connection", 
+      "description": "Lazy MySQL connection for individual entity",
+      "templatePath": "infrastructure/mysql/lazy-connection.ts.ejs",
+      "outputPath": "mysql/lazy-connection.ts",
+      "condition": "!sharedDomain"
+    },
+    {
+      "name": "schema",
+      "description": "Sequelize schema definition",
+      "templatePath": "infrastructure/mysql/schema.ts.ejs",
+      "outputPath": "mysql/schemas/{{schemaNames.kebabCase}}-schema.ts"
+    },
+    {
+      "name": "model",
+      "description": "Sequelize model with domain entity mapping",
+      "templatePath": "infrastructure/mysql/model.ts.ejs", 
+      "outputPath": "mysql/models/{{schemaNames.kebabCase}}-model.ts"
+    },
+    {
+      "name": "repository",
+      "description": "MySQL repository implementation using Sequelize",
+      "templatePath": "infrastructure/mysql/repository.ts.ejs",
+      "outputPath": "mysql/repositories/{{schemaNames.kebabCase}}-mysql-repository.ts"
+    },
+    {
+      "name": "lazy-index",
+      "description": "Individual entity database index",
+      "templatePath": "infrastructure/mysql/lazy-index.ts.ejs",
+      "outputPath": "index.ts",
+      "condition": "!sharedDomain"
+    },
+    {
+      "name": "shared-index",
+      "description": "Shared domain database index",
+      "templatePath": "infrastructure/mysql/shared-index.ts.ejs", 
+      "outputPath": "index.ts",
+      "condition": "sharedDomain && newSharedIndex"
+    },
+    {
+      "name": "shared-export",
+      "description": "Export template for appending to shared index",
+      "templatePath": "infrastructure/mysql/shared-export.ts.ejs",
+      "outputPath": "index.ts",
+      "condition": "sharedDomain && !newSharedIndex"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "sequelize",
+      "version": "^6.35.0",
+      "type": "dependency"
+    },
+    {
+      "name": "mysql2", 
+      "version": "^3.6.0",
+      "type": "dependency"
+    },
+    {
+      "name": "@types/sequelize",
+      "version": "^4.28.20",
+      "type": "devDependency"
+    }
+  ],
+  "environmentVariables": [
+    {
+      "name": "{{envVar}}",
+      "description": "MySQL connection string",
+      "example": "mysql://user:password@localhost:3306/{{databaseName}}",
+      "required": true
+    }
+  ],
+  "features": [
+    "Lazy loading - connects only when first used",
+    "Shared connection pool for multiple entities in same domain",
+    "Native Sequelize features - no custom abstractions", 
+    "Transaction support across multiple entities",
+    "Type safety with TypeScript models",
+    "Production ready with error handling & connection management",
+    "Automatic database sync in development mode",
+    "Connection pooling and retry logic",
+    "Raw SQL query execution support",
+    "Bulk operations support"
+  ]
+}

@@ -1,0 +1,336 @@
+import { <%= schemaNames.pascalCase %> } from '<% if (sharedDomain) { %>../../../../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity<% } else { %>../../../../../domain/<%= schemaNames.kebabCase %>/entities/<%= schemaNames.kebabCase %>.entity<% } %>';
+import { I<%= schemaNames.pascalCase %>Repository } from '<% if (sharedDomain) { %>../../../../../domain/<%= schemaNames.kebabCase %>/repositories/<%= schemaNames.kebabCase %>.repository.interface<% } else { %>../../../../../domain/<%= schemaNames.kebabCase %>/repositories/<%= schemaNames.kebabCase %>.repository.interface<% } %>';
+import { get<%= schemaNames.pascalCase %>Model, toDomainEntity, fromDomainEntity, I<%= schemaNames.pascalCase %>Model } from '../models/<%= schemaNames.kebabCase %>-model';
+<% if (sharedDomain) { -%>
+import { <%= sharedDomainNames.camelCase %>MySqlConnection } from '../shared-connection';
+<% } else { -%>
+import { <%= schemaNames.camelCase %>MySqlConnection } from '../lazy-connection';
+<% } -%>
+import { Op, Transaction, QueryTypes } from 'sequelize';
+
+/**
+ * MySQL implementation of <%= schemaNames.pascalCase %> repository using Sequelize
+ * Implements lazy loading pattern - connects only when first used
+ */
+export class <%= schemaNames.pascalCase %>MySqlRepository implements I<%= schemaNames.pascalCase %>Repository {
+  private _model: Awaited<ReturnType<typeof get<%= schemaNames.pascalCase %>Model>> | null = null;
+
+  /**
+   * Get Sequelize model (lazy initialization)
+   */
+  private async getModel() {
+    if (!this._model) {
+      this._model = await get<%= schemaNames.pascalCase %>Model();
+    }
+    return this._model;
+  }
+
+  /**
+   * Find <%= schemaNames.camelCase %> by ID
+   */
+  async findById(id: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const model = await this.getModel();
+      const result = await model.findByPk(id);
+      
+      if (!result) {
+        return null;
+      }
+
+      return toDomainEntity(result);
+    } catch (error) {
+      console.error(`Error finding <%= schemaNames.camelCase %> by ID ${id}:`, error);
+      throw new Error(`Failed to find <%= schemaNames.camelCase %> by ID: ${error}`);
+    }
+  }
+
+  /**
+   * Find all <%= schemaNames.pluralCamelCase %>
+   */
+  async findAll(): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await this.getModel();
+      const results = await model.findAll({
+        order: [['created_at', 'DESC']]
+      });
+      
+      return results.map(toDomainEntity);
+    } catch (error) {
+      console.error(`Error finding all <%= schemaNames.pluralCamelCase %>:`, error);
+      throw new Error(`Failed to find all <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Find <%= schemaNames.pluralCamelCase %> with pagination
+   */
+  async findWithPagination(page: number = 1, limit: number = 10): Promise<{
+    items: <%= schemaNames.pascalCase %>[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    try {
+      const model = await this.getModel();
+      const offset = (page - 1) * limit;
+      
+      const { count, rows } = await model.findAndCountAll({
+        limit,
+        offset,
+        order: [['created_at', 'DESC']]
+      });
+      
+      return {
+        items: rows.map(toDomainEntity),
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
+      };
+    } catch (error) {
+      console.error(`Error finding <%= schemaNames.pluralCamelCase %> with pagination:`, error);
+      throw new Error(`Failed to find <%= schemaNames.pluralCamelCase %> with pagination: ${error}`);
+    }
+  }
+
+  /**
+   * Find <%= schemaNames.pluralCamelCase %> by criteria
+   */
+  async findBy(criteria: Partial<<%= schemaNames.pascalCase %>>): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await this.getModel();
+      const whereClause: any = {};
+      
+      // Build where clause from criteria
+      Object.entries(criteria).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'string') {
+            // Case-insensitive string matching
+            whereClause[key] = { [Op.iLike]: `%${value}%` };
+          } else {
+            whereClause[key] = value;
+          }
+        }
+      });
+      
+      const results = await model.findAll({
+        where: whereClause,
+        order: [['created_at', 'DESC']]
+      });
+      
+      return results.map(toDomainEntity);
+    } catch (error) {
+      console.error(`Error finding <%= schemaNames.pluralCamelCase %> by criteria:`, error);
+      throw new Error(`Failed to find <%= schemaNames.pluralCamelCase %> by criteria: ${error}`);
+    }
+  }
+
+  /**
+   * Save <%= schemaNames.camelCase %> (create or update)
+   */
+  async save(entity: <%= schemaNames.pascalCase %>): Promise<void> {
+    try {
+      const model = await this.getModel();
+      const data = fromDomainEntity(entity);
+      
+      // Check if entity exists
+      const existing = await model.findByPk(entity.id);
+      
+      if (existing) {
+        // Update existing
+        await existing.update(data);
+      } else {
+        // Create new
+        await model.create(data);
+      }
+    } catch (error) {
+      console.error(`Error saving <%= schemaNames.camelCase %>:`, error);
+      throw new Error(`Failed to save <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Create new <%= schemaNames.camelCase %>
+   */
+  async create(entity: <%= schemaNames.pascalCase %>): Promise<<%= schemaNames.pascalCase %>> {
+    try {
+      const model = await this.getModel();
+      const data = fromDomainEntity(entity);
+      
+      const created = await model.create(data);
+      return toDomainEntity(created);
+    } catch (error) {
+      console.error(`Error creating <%= schemaNames.camelCase %>:`, error);
+      throw new Error(`Failed to create <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Update <%= schemaNames.camelCase %>
+   */
+  async update(entity: <%= schemaNames.pascalCase %>): Promise<void> {
+    try {
+      const model = await this.getModel();
+      const existing = await model.findByPk(entity.id);
+      
+      if (!existing) {
+        throw new Error(`<%= schemaNames.pascalCase %> with id ${entity.id} not found`);
+      }
+      
+      const data = fromDomainEntity(entity);
+      await existing.update(data);
+    } catch (error) {
+      console.error(`Error updating <%= schemaNames.camelCase %> ${entity.id}:`, error);
+      throw new Error(`Failed to update <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Delete <%= schemaNames.camelCase %> by ID
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      const model = await this.getModel();
+      const deleted = await model.destroy({
+        where: { id }
+      });
+      
+      if (deleted === 0) {
+        throw new Error(`<%= schemaNames.pascalCase %> with id ${id} not found`);
+      }
+    } catch (error) {
+      console.error(`Error deleting <%= schemaNames.camelCase %> ${id}:`, error);
+      throw new Error(`Failed to delete <%= schemaNames.camelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Find <%= schemaNames.camelCase %> by name
+   */
+  async findByName(name: string): Promise<<%= schemaNames.pascalCase %> | null> {
+    try {
+      const model = await this.getModel();
+      const result = await model.findOne({
+        where: { name }
+      });
+      
+      if (!result) {
+        return null;
+      }
+
+      return toDomainEntity(result);
+    } catch (error) {
+      console.error(`Error finding <%= schemaNames.camelCase %> by name ${name}:`, error);
+      throw new Error(`Failed to find <%= schemaNames.camelCase %> by name: ${error}`);
+    }
+  }
+
+  /**
+   * Find <%= schemaNames.pluralCamelCase %> by status
+   */
+  async findByStatus(isActive: boolean): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await this.getModel();
+      const results = await model.findAll({
+        where: { isActive },
+        order: [['created_at', 'DESC']]
+      });
+      
+      return results.map(toDomainEntity);
+    } catch (error) {
+      console.error(`Error finding <%= schemaNames.pluralCamelCase %> by status ${isActive}:`, error);
+      throw new Error(`Failed to find <%= schemaNames.pluralCamelCase %> by status: ${error}`);
+    }
+  }
+
+  /**
+   * Count total <%= schemaNames.pluralCamelCase %>
+   */
+  async count(): Promise<number> {
+    try {
+      const model = await this.getModel();
+      return await model.count();
+    } catch (error) {
+      console.error(`Error counting <%= schemaNames.pluralCamelCase %>:`, error);
+      throw new Error(`Failed to count <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Check if <%= schemaNames.camelCase %> exists
+   */
+  async exists(id: string): Promise<boolean> {
+    try {
+      const model = await this.getModel();
+      const count = await model.count({
+        where: { id }
+      });
+      
+      return count > 0;
+    } catch (error) {
+      console.error(`Error checking if <%= schemaNames.camelCase %> exists ${id}:`, error);
+      throw new Error(`Failed to check if <%= schemaNames.camelCase %> exists: ${error}`);
+    }
+  }
+
+  /**
+   * Execute operations within a transaction
+   */
+  async withTransaction<T>(callback: (transaction: Transaction) => Promise<T>): Promise<T> {
+    try {
+<% if (sharedDomain) { -%>
+      const sequelize = await <%= sharedDomainNames.camelCase %>MySqlConnection.getConnection();
+<% } else { -%>
+      const sequelize = await <%= schemaNames.camelCase %>MySqlConnection.getConnection();
+<% } -%>
+      
+      return await sequelize.transaction(callback);
+    } catch (error) {
+      console.error(`Error executing transaction:`, error);
+      throw new Error(`Transaction failed: ${error}`);
+    }
+  }
+
+  /**
+   * Perform bulk operations
+   */
+  async bulkCreate(entities: <%= schemaNames.pascalCase %>[]): Promise<<%= schemaNames.pascalCase %>[]> {
+    try {
+      const model = await this.getModel();
+      const data = entities.map(fromDomainEntity);
+      
+      const created = await model.bulkCreate(data, {
+        returning: true
+      });
+      
+      return created.map(toDomainEntity);
+    } catch (error) {
+      console.error(`Error bulk creating <%= schemaNames.pluralCamelCase %>:`, error);
+      throw new Error(`Failed to bulk create <%= schemaNames.pluralCamelCase %>: ${error}`);
+    }
+  }
+
+  /**
+   * Execute raw SQL query
+   */
+  async executeRawQuery(query: string, replacements?: any[]): Promise<any> {
+    try {
+<% if (sharedDomain) { -%>
+      const sequelize = await <%= sharedDomainNames.camelCase %>MySqlConnection.getConnection();
+<% } else { -%>
+      const sequelize = await <%= schemaNames.camelCase %>MySqlConnection.getConnection();
+<% } -%>
+      
+      const [results] = await sequelize.query(query, {
+        replacements,
+        type: QueryTypes.SELECT
+      });
+      
+      return results;
+    } catch (error) {
+      console.error(`Error executing raw query:`, error);
+      throw new Error(`Failed to execute raw query: ${error}`);
+    }
+  }
+}

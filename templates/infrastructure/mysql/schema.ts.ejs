@@ -1,0 +1,137 @@
+import { DataTypes } from 'sequelize';
+
+/**
+ * Sequelize schema definition for <%= schemaNames.pascalCase %> entity
+ */
+export const <%= schemaNames.pascalCase %>Schema = {
+<% fields.forEach((field, index) => { -%>
+  <%= field.name %>: {
+    type: <%= field.sequelizeType %>,
+<% if (field.mysqlValidation.primaryKey) { -%>
+    primaryKey: true,
+<% } -%>
+<% if (field.mysqlValidation.allowNull !== undefined) { -%>
+    allowNull: <%= field.mysqlValidation.allowNull %>,
+<% } -%>
+<% if (field.mysqlValidation.unique) { -%>
+    unique: true,
+<% } -%>
+<% if (field.mysqlValidation.defaultValue) { -%>
+    defaultValue: <%= field.mysqlValidation.defaultValue %>,
+<% } -%>
+<% if (field.mysqlValidation.validate && Object.keys(field.mysqlValidation.validate).length > 0) { -%>
+    validate: {
+<% Object.entries(field.mysqlValidation.validate).forEach(([key, value], validateIndex) => { -%>
+      <%= key %>: <%= Array.isArray(value) ? `[${value.join(', ')}] as const` : (typeof value === 'string' ? `'${value}'` : value) %><% if (validateIndex < Object.entries(field.mysqlValidation.validate).length - 1) { %>,<% } %>
+<% }); -%>
+    },
+<% } -%>
+<% if (field.comment) { -%>
+    comment: '<%= field.comment %>',
+<% } -%>
+  }<% if (index < fields.length - 1) { %>,<% } %>
+<% }); -%>
+<% if (timestamps) { -%>
+};
+
+/**
+ * Sequelize model options for <%= schemaNames.pascalCase %>
+ */
+export const <%= schemaNames.pascalCase %>ModelOptions = {
+  tableName: '<%= schemaNames.snakeCase %>s',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+<% if (indexes && indexes.length > 0) { -%>
+  indexes: [
+<% indexes.forEach((index, indexNumber) => { -%>
+    {
+<% if (index.unique) { -%>
+      unique: true,
+<% } -%>
+<% if (index.name) { -%>
+      name: '<%= index.name %>',
+<% } -%>
+      fields: [<% index.fields.forEach((field, fieldIndex) => { %>'<%= field %>'<% if (fieldIndex < index.fields.length - 1) { %>, <% } %><% }); %>]
+    }<% if (indexNumber < indexes.length - 1) { %>,<% } %>
+<% }); -%>
+  ],
+<% } -%>
+  hooks: {
+    beforeCreate: (instance: any) => {
+      // Add any pre-creation logic here
+      console.log(`Creating new <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterCreate: (instance: any) => {
+      // Add any post-creation logic here
+      console.log(`Created <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    beforeUpdate: (instance: any) => {
+      // Add any pre-update logic here
+      console.log(`Updating <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterUpdate: (instance: any) => {
+      // Add any post-update logic here
+      console.log(`Updated <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    beforeDestroy: (instance: any) => {
+      // Add any pre-deletion logic here
+      console.log(`Deleting <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterDestroy: (instance: any) => {
+      // Add any post-deletion logic here
+      console.log(`Deleted <%= schemaNames.pascalCase %>:`, instance.id);
+    }
+  }
+<% } else { -%>
+};
+
+/**
+ * Sequelize model options for <%= schemaNames.pascalCase %>
+ */
+export const <%= schemaNames.pascalCase %>ModelOptions = {
+  tableName: '<%= schemaNames.snakeCase %>s',
+  timestamps: false,
+<% if (indexes && indexes.length > 0) { -%>
+  indexes: [
+<% indexes.forEach((index, indexNumber) => { -%>
+    {
+<% if (index.unique) { -%>
+      unique: true,
+<% } -%>
+<% if (index.name) { -%>
+      name: '<%= index.name %>',
+<% } -%>
+      fields: [<% index.fields.forEach((field, fieldIndex) => { %>'<%= field %>'<% if (fieldIndex < index.fields.length - 1) { %>, <% } %><% }); %>]
+    }<% if (indexNumber < indexes.length - 1) { %>,<% } %>
+<% }); -%>
+  ],
+<% } -%>
+  hooks: {
+    beforeCreate: (instance: any) => {
+      // Add any pre-creation logic here
+      console.log(`Creating new <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterCreate: (instance: any) => {
+      // Add any post-creation logic here
+      console.log(`Created <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    beforeUpdate: (instance: any) => {
+      // Add any pre-update logic here
+      console.log(`Updating <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterUpdate: (instance: any) => {
+      // Add any post-update logic here
+      console.log(`Updated <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    beforeDestroy: (instance: any) => {
+      // Add any pre-deletion logic here
+      console.log(`Deleting <%= schemaNames.pascalCase %>:`, instance.id);
+    },
+    afterDestroy: (instance: any) => {
+      // Add any post-deletion logic here
+      console.log(`Deleted <%= schemaNames.pascalCase %>:`, instance.id);
+    }
+  }
+<% } -%>
+};

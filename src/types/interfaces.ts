@@ -134,7 +134,8 @@ export type GeneratorType =
   | 'controller'
   | 'dto'
   | 'presentation-http'
-  | 'mongodb-lazy';
+  | 'mongodb-lazy'
+  | 'mysql-lazy';
 
 export interface NamingConventions {
   camelCase: string;

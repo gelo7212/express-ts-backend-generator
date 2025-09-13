@@ -1,0 +1,10 @@
+// <%= schemaNames.pascalCase %> Entity
+export { <%= schemaNames.pascalCase %>Schema, <%= schemaNames.pascalCase %>ModelOptions } from './mysql/schemas/<%= schemaNames.kebabCase %>-schema';
+export { 
+  get<%= schemaNames.pascalCase %>Model, 
+  I<%= schemaNames.pascalCase %>Model, 
+  <%= schemaNames.pascalCase %>ModelType,
+  toDomainEntity as <%= schemaNames.camelCase %>ToDomainEntity,
+  fromDomainEntity as <%= schemaNames.camelCase %>FromDomainEntity
+} from './mysql/models/<%= schemaNames.kebabCase %>-model';
+export { <%= schemaNames.pascalCase %>MySqlRepository } from './mysql/repositories/<%= schemaNames.kebabCase %>-mysql-repository';

@@ -29,6 +29,7 @@ import { ServiceGenerator } from '../generators/service-generator';
 import { ValueObjectGenerator } from '../generators/value-object-generator';
 import { PresentationHttpGenerator } from '../generators/presentation-http-generator';
 import { MongoDbLazyGenerator } from '../generators/mongodb-lazy-generator';
+import { MySqlLazyGenerator } from '../generators/mysql-lazy-generator';
 
 // Commands
 import { NewProjectCommand } from '../commands/new-project-command';
@@ -41,6 +42,7 @@ import { GenerateValueObjectCommand } from '../commands/generate-value-object-co
 import { GeneratePresentationHttpCommand } from '../commands/generate-presentation-http-command';
 import { GenerateEntityCommand } from '../commands/generate-entity-command';
 import { GenerateMongoDbLazyCommand } from '../commands/generate-mongodb-lazy-command';
+import { GenerateMySqlLazyCommand } from '../commands/generate-mysql-lazy-command';
 
 /**
  * Application bootstrapper - sets up dependency injection and registers services
@@ -157,6 +159,10 @@ export class Application {
     factory.registerGenerator('mongodb-lazy', 
       new MongoDbLazyGenerator(fileSystem, logger, templateEngine, templateRegistry)
     );
+
+    factory.registerGenerator('mysql-lazy', 
+      new MySqlLazyGenerator(fileSystem, logger, templateEngine, templateRegistry)
+    );
   }
 
   private async registerCommandServices(): Promise<void> {
@@ -174,6 +180,7 @@ export class Application {
     const logger = this.container.resolve<ILogger>(TOKENS.LOGGER);
     const stringUtils = this.container.resolve<IStringUtils>(TOKENS.STRING_UTILS);
     const generatorFactory = this.container.resolve<IGeneratorFactory>(TOKENS.GENERATOR_FACTORY);
+    const fileSystem = this.container.resolve<IFileSystem>(TOKENS.FILE_SYSTEM);
 
     // Register all commands
     registry.register(
@@ -214,6 +221,10 @@ export class Application {
 
     registry.register(
       new GenerateMongoDbLazyCommand(this.container, logger, stringUtils, generatorFactory)
+    );
+
+    registry.register(
+      new GenerateMySqlLazyCommand(this.container, logger, stringUtils, generatorFactory, fileSystem)
     );
   }
 
