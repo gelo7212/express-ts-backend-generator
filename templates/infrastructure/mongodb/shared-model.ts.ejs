@@ -1,0 +1,44 @@
+import { Document, Model, Types } from 'mongoose';
+import { <%= sharedDomainNames.camelCase %>ConnectionManager } from '../connection';
+import { <%= schemaNames.camelCase %>Schema } from '../schemas/<%= schemaNames.kebabCase %>.schema';
+
+/**
+ * <%= schemaNames.pascalCase %> MongoDB Document Interface
+ * Extends Mongoose Document for <%= schemaNames.kebabCase %> entity in shared <%= sharedDomainNames.kebabCase %> domain
+ * Generated on: <%= new Date().toISOString() %>
+ */
+export interface I<%= schemaNames.pascalCase %>Document extends Document {
+<%- fields.map(field => `  ${field.name}: ${field.mongooseType};${field.description ? ` // ${field.description}` : ''}`).join('\n') %>
+
+  // Mongoose built-in fields
+  _id: Types.ObjectId;
+<% if (timestamps) { %>  createdAt: Date;
+  updatedAt: Date;<% } %>
+}
+
+/**
+ * Get <%= schemaNames.pascalCase %> Model with Shared Connection
+ * Uses the shared <%= sharedDomainNames.kebabCase %> domain connection manager
+ * 
+ * Benefits:
+ * ✅ Shared connection pool - resource efficient
+ * ✅ Transaction support - can run transactions across multiple entities
+ * ✅ Lazy loading - only connects when first used
+ * ✅ Domain-specific database - isolated from other domains
+ */
+export const get<%= schemaNames.pascalCase %>Model = async () => {
+  const connection = await <%= sharedDomainNames.camelCase %>ConnectionManager.getConnection('<%= databaseName %>');
+  
+  // Return existing model if already registered
+  if (connection.models['<%= schemaNames.pascalCase %>']) {
+    return connection.models['<%= schemaNames.pascalCase %>'] as Model<I<%= schemaNames.pascalCase %>Document>;
+  }
+  
+  // Register and return new model
+  return connection.model<I<%= schemaNames.pascalCase %>Document>('<%= schemaNames.pascalCase %>', <%= schemaNames.camelCase %>Schema);
+};
+
+/**
+ * <%= schemaNames.pascalCase %> Model Type
+ */
+export type <%= schemaNames.pascalCase %>Model = Model<I<%= schemaNames.pascalCase %>Document>;

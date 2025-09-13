@@ -2,21 +2,26 @@
  * MongoDB Infrastructure - Lazy Loading Pattern
  * 
  * This module exports all MongoDB implementation components using a lazy-loading pattern.
- * Each entity has its own MongoDB connection and model that loads only when first accessed.
- * 
+<% if (sharedDomain) { %> * All entities in the <%= sharedDomainNames.kebabCase %> domain share the same connection pool for efficiency.
+<% } else { %> * Each entity has its own MongoDB connection and model that loads only when first accessed.
+<% } %> * 
  * Benefits:
- * ✅ Each entity has its own optimized MongoDB connection
- * ✅ Mongoose ODM with all its features - validations, middleware, plugins
+<% if (sharedDomain) { %> * ✅ Shared connection pool - resource efficient across domain entities
+ * ✅ Transaction support - can run transactions across multiple entities
+<% } else { %> * ✅ Each entity has its own optimized MongoDB connection
+<% } %> * ✅ Mongoose ODM with all its features - validations, middleware, plugins
  * ✅ Lazy loading - connections only created when needed
  * ✅ MongoDB-specific features - text search, aggregations, flexible schemas
  * ✅ No database adapter abstraction - pure Mongoose implementation
  * 
  * Generated on: <%= new Date().toISOString() %>
  * Entity: <%= schemaNames.pascalCase %>
- */
+<% if (sharedDomain) { %> * Domain: <%= sharedDomainNames.pascalCase %>
+<% } %> */
 
-// Lazy connection pattern
-export { <%= schemaNames.camelCase %>MongoConnection } from './connection';
+<% if (sharedDomain) { %>// Shared connection manager for <%= sharedDomainNames.kebabCase %> domain
+export { <%= sharedDomainNames.camelCase %>ConnectionManager } from './connection';<% } else { %>// Lazy connection pattern
+export { <%= schemaNames.camelCase %>MongoConnection } from './connection';<% } %>
 
 // Mongoose model with lazy loading
 export { get<%= schemaNames.pascalCase %>Model, I<%= schemaNames.pascalCase %>Document } from './models/<%= schemaNames.kebabCase %>.model';
