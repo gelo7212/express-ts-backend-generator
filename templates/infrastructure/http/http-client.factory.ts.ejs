@@ -1,0 +1,181 @@
+import { HttpClientBase } from './http-client.base';
+import { IHttpClientConfig } from './types/api.types';
+
+/**
+ * Factory for creating HTTP clients with different configurations
+ * Follows the Factory pattern for flexible client creation
+ */
+export class HttpClientFactory {
+  private clients = new Map<string, HttpClientBase>();
+
+  /**
+   * Create a new HTTP client with specific configuration
+   */
+  createClient(name: string, config: IHttpClientConfig): HttpClientBase {
+    const client = new HttpClientBase(config);
+    this.clients.set(name, client);
+    return client;
+  }
+
+  /**
+   * Get existing client by name
+   */
+  getClient(name: string): HttpClientBase | undefined {
+    return this.clients.get(name);
+  }
+
+  /**
+   * Get or create client with configuration
+   */
+  getOrCreateClient(name: string, config: IHttpClientConfig): HttpClientBase {
+    const existingClient = this.getClient(name);
+    if (existingClient) {
+      return existingClient;
+    }
+    return this.createClient(name, config);
+  }
+
+  /**
+   * Remove client from factory
+   */
+  removeClient(name: string): boolean {
+    return this.clients.delete(name);
+  }
+
+  /**
+   * Get all registered client names
+   */
+  getClientNames(): string[] {
+    return Array.from(this.clients.keys());
+  }
+
+  /**
+   * Clear all clients
+   */
+  clearAll(): void {
+    this.clients.clear();
+  }
+
+  /**
+   * Create client with default configuration for common use cases
+   */
+  createDefaultClient(baseUrl: string, authToken?: string): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout: 5000,
+      retries: 3,
+      authToken,
+      <%_ if (config.includeRateLimit) { _%>
+      rateLimit: {
+        maxRequests: 100,
+        windowMs: 60000 // 1 minute
+      },
+      <%_ } _%>
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+
+  /**
+   * Create client for JSON API
+   */
+  createJsonApiClient(baseUrl: string, authToken?: string): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout: 8000,
+      retries: 2,
+      authToken,
+      defaultHeaders: {
+        'Content-Type': 'application/vnd.api+json',
+        'Accept': 'application/vnd.api+json'
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+
+  /**
+   * Create client for file uploads
+   */
+  createUploadClient(baseUrl: string, authToken?: string): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout: 30000, // Longer timeout for uploads
+      retries: 1,
+      authToken,
+      defaultHeaders: {
+        'Accept': 'application/json'
+        // Content-Type will be set automatically for multipart/form-data
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+
+  /**
+   * Create client with API key authentication
+   */
+  createApiKeyClient(baseUrl: string, apiKey: string, keyHeader: string = 'X-API-Key'): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout: 5000,
+      retries: 3,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        [keyHeader]: apiKey
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+
+  /**
+   * Create client with custom timeout and retry settings
+   */
+  createCustomClient(
+    baseUrl: string,
+    timeout: number,
+    retries: number,
+    authToken?: string,
+    customHeaders?: Record<string, string>
+  ): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout,
+      retries,
+      authToken,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...customHeaders
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+
+  <%_ if (config.includeMock) { _%>
+  /**
+   * Create mock client for testing
+   */
+  createMockClient(baseUrl: string = 'http://localhost:3000'): HttpClientBase {
+    const config: IHttpClientConfig = {
+      baseUrl,
+      timeout: 1000,
+      retries: 0,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Mock-Mode': 'true'
+      }
+    };
+
+    return new HttpClientBase(config);
+  }
+  <%_ } _%>
+}

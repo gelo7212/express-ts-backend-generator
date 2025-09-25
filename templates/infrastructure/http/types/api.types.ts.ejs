@@ -1,0 +1,212 @@
+import { AxiosRequestConfig } from 'axios';
+
+/**
+ * HTTP Methods supported by the API client
+ */
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+
+/**
+ * Standard API response wrapper
+ */
+export interface ApiResponse<T = any> {
+  /** Response data */
+  data: T;
+  /** HTTP status code */
+  status: number;
+  /** HTTP status text */
+  statusText: string;
+  /** Response headers */
+  headers: any;
+  /** Whether the request was successful */
+  success: boolean;
+  /** Optional message */
+  message?: string;
+}
+
+/**
+ * Error response structure
+ */
+export interface ApiError {
+  /** Error message */
+  message: string;
+  /** HTTP status code */
+  status?: number;
+  /** Error code */
+  code?: string;
+  /** Additional error details */
+  details?: any;
+  /** Success flag (always false for errors) */
+  success: false;
+}
+
+/**
+ * Pagination parameters
+ */
+export interface PaginationParams {
+  /** Page number (1-based) */
+  page?: number;
+  /** Number of items per page */
+  limit?: number;
+  /** Number of items to skip */
+  offset?: number;
+  /** Sort field */
+  sortBy?: string;
+  /** Sort direction */
+  sortOrder?: 'ASC' | 'DESC' | 'asc' | 'desc';
+}
+
+/**
+ * Paginated response wrapper
+ */
+export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
+  /** Pagination metadata */
+  pagination: {
+    /** Current page number */
+    page: number;
+    /** Items per page */
+    limit: number;
+    /** Total number of items */
+    total: number;
+    /** Total number of pages */
+    totalPages: number;
+    /** Whether there is a next page */
+    hasNext: boolean;
+    /** Whether there is a previous page */
+    hasPrev: boolean;
+  };
+}
+
+/**
+ * Request options extending Axios config
+ */
+export interface RequestOptions extends Omit<AxiosRequestConfig, 'url' | 'method' | 'data'> {
+  /** Custom headers for this request */
+  headers?: Record<string, string>;
+  /** Query parameters */
+  params?: Record<string, any>;
+  /** Request timeout override */
+  timeout?: number;
+  /** Skip authentication for this request */
+  skipAuth?: boolean;
+  /** Cache this request (if caching is enabled) */
+  cache?: boolean;
+  /** Cache TTL override */
+  cacheTtl?: number;
+}
+
+/**
+ * HTTP Client configuration interface
+ */
+export interface IHttpClientConfig {
+  /** Base URL for all requests */
+  baseUrl: string;
+  /** Request timeout in milliseconds */
+  timeout?: number;
+  /** Number of retry attempts */
+  retries?: number;
+  /** Authentication token */
+  authToken?: string;
+  /** Default headers */
+  defaultHeaders?: Record<string, string>;
+  <%_ if (config.includeRateLimit) { _%>
+  /** Rate limiting configuration */
+  rateLimit?: {
+    maxRequests: number;
+    windowMs: number;
+  };
+  <%_ } _%>
+  <%_ if (config.includeCache) { _%>
+  /** Cache configuration */
+  cache?: {
+    enabled: boolean;
+    ttl: number;
+  };
+  <%_ } _%>
+}
+
+/**
+ * API endpoint definition
+ */
+export interface ApiEndpoint {
+  /** Endpoint name */
+  name: string;
+  /** HTTP method */
+  method: HttpMethod;
+  /** URL path (relative to base URL) */
+  path: string;
+  /** Whether authentication is required */
+  requiresAuth?: boolean;
+  /** Request/response description */
+  description?: string;
+  /** Expected request body type */
+  requestType?: string;
+  /** Expected response type */
+  responseType?: string;
+}
+
+/**
+ * Authentication types
+ */
+export type AuthType = 'bearer' | 'api-key' | 'basic' | 'none';
+
+/**
+ * File upload progress callback
+ */
+export type UploadProgressCallback = (progressEvent: {
+  loaded: number;
+  total: number;
+  percentage: number;
+}) => void;
+
+/**
+ * HTTP client events
+ */
+export interface HttpClientEvents {
+  /** Fired before each request */
+  beforeRequest?: (config: AxiosRequestConfig) => void;
+  /** Fired after successful response */
+  afterResponse?: (response: ApiResponse) => void;
+  /** Fired on error */
+  onError?: (error: ApiError) => void;
+  /** Fired on retry attempt */
+  onRetry?: (attempt: number, maxAttempts: number) => void;
+}
+
+<%_ if (config.endpoints && config.endpoints.length > 0) { _%>
+/**
+ * <%- entityName.pascalCase %> API endpoints
+ */
+export const <%- entityName.uppercase %>_ENDPOINTS = {
+  <%_ config.endpoints.forEach((endpoint, index) => { _%>
+  <%- endpoint.name.toUpperCase() %>: {
+    name: '<%- endpoint.name %>',
+    method: '<%- endpoint.method %>' as HttpMethod,
+    path: '<%- endpoint.path %>',
+    requiresAuth: <%- endpoint.requiresAuth !== false %>,
+    <%_ if (endpoint.description) { _%>
+    description: '<%- endpoint.description %>',
+    <%_ } _%>
+  }<%- index < config.endpoints.length - 1 ? ',' : '' %>
+  <%_ }); _%>
+} as const;
+
+/**
+ * <%- entityName.pascalCase %> API endpoint type
+ */
+export type <%- entityName.pascalCase %>Endpoint = typeof <%- entityName.uppercase %>_ENDPOINTS[keyof typeof <%- entityName.uppercase %>_ENDPOINTS];
+<%_ } _%>
+
+/**
+ * Request interceptor function type
+ */
+export type RequestInterceptor = (config: AxiosRequestConfig) => AxiosRequestConfig;
+
+/**
+ * Response interceptor function type
+ */
+export type ResponseInterceptor = (response: any) => any;
+
+/**
+ * Error interceptor function type
+ */
+export type ErrorInterceptor = (error: any) => Promise<any>;

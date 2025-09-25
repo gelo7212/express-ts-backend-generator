@@ -1,0 +1,267 @@
+/**
+ * HTTP Infrastructure Module
+ * 
+ * Provides enterprise-ready HTTP client infrastructure with:
+ * - Axios-based HTTP client with interceptors
+ * - Factory pattern for client management
+ * - Type-safe API interfaces
+ * - Authentication support
+ * - Retry logic with exponential backoff
+ * - Request/Response logging
+ * - Error handling
+ * <%_ if (config.includeRateLimit) { _%>
+ * - Rate limiting
+ * <%_ } _%>
+ * <%_ if (config.includeCache) { _%>
+ * - Response caching
+ * <%_ } _%>
+ * 
+ * @example
+ * ```typescript
+ * import { HttpClientFactory, <%- entityName.pascalCase %>ApiService } from '@/infrastructure/http';
+ * 
+ * // Create HTTP client factory
+ * const factory = new HttpClientFactory();
+ * 
+ * // Create API service
+ * const apiService = new <%- entityName.pascalCase %>ApiService(factory);
+ * 
+ * // Use the service
+ * const data = await apiService.getAll();
+ * ```
+ */
+
+// Core HTTP infrastructure
+export { HttpClientBase } from './http-client.base';
+export { HttpClientFactory } from './http-client.factory';
+export { 
+  IHttpClientConfig, 
+  getHttpConfig, 
+  createHttpConfig,
+  HttpConfigs 
+} from './http-client.config';
+
+// Type definitions
+export * from './types/api.types';
+export * from './types/responses.types';
+
+// Interceptors
+export * from './interceptors';
+
+// API Services - Initial service
+export { <%- entityName.pascalCase %>ApiService } from './services/<%- entityName.kebabCase %>-api.service';
+
+// Auto-generated API service exports will be added below
+// DO NOT MODIFY THIS SECTION MANUALLY - IT'S AUTO-GENERATED
+// START_GENERATED_SERVICE_EXPORTS
+
+// END_GENERATED_SERVICE_EXPORTS
+
+// Import classes for internal use
+import { HttpClientFactory } from './http-client.factory';
+import { <%- entityName.pascalCase %>ApiService } from './services/<%- entityName.kebabCase %>-api.service';
+
+// Auto-generated imports will be added below
+// DO NOT MODIFY THIS SECTION MANUALLY - IT'S AUTO-GENERATED
+// START_GENERATED_IMPORTS
+
+// END_GENERATED_IMPORTS
+
+/**
+ * Pre-configured HTTP client instances
+ */
+export const httpClients = {
+  /**
+   * Create default <%- entityName.kebabCase %> API client
+   */
+  create<%- entityName.pascalCase %>Client(): <%- entityName.pascalCase %>ApiService {
+    const factory = new HttpClientFactory();
+    return new <%- entityName.pascalCase %>ApiService(factory);
+  },
+
+  // Auto-generated client methods will be added below
+  // DO NOT MODIFY THIS SECTION MANUALLY - IT'S AUTO-GENERATED
+  // START_GENERATED_CLIENT_METHODS
+
+  // END_GENERATED_CLIENT_METHODS
+
+  /**
+   * Create HTTP client factory
+   */
+  createFactory(): HttpClientFactory {
+    return new HttpClientFactory();
+  }
+};
+
+/**
+ * HTTP client configuration presets
+ */
+export const httpPresets = {
+  /**
+   * Default configuration for <%- entityName.kebabCase %> API
+   */
+  <%- entityName.camelCase %>: {
+    baseUrl: '<%- config.baseUrl || "https://api." + entityName.kebabCase + ".com" %>',
+    timeout: <%- config.timeout || 5000 %>,
+    retries: <%- config.retries || 3 %>,
+    authType: '<%- config.authType || "bearer" %>' as const
+  },
+
+  // Auto-generated service presets will be added below
+  // DO NOT MODIFY THIS SECTION MANUALLY - IT'S AUTO-GENERATED
+  // START_GENERATED_SERVICE_PRESETS
+
+  // END_GENERATED_SERVICE_PRESETS
+
+  /**
+   * Fast configuration for quick requests
+   */
+  fast: {
+    timeout: 2000,
+    retries: 1
+  },
+
+  /**
+   * Reliable configuration for important requests
+   */
+  reliable: {
+    timeout: 10000,
+    retries: 5
+  },
+
+  /**
+   * Upload configuration for file uploads
+   */
+  upload: {
+    timeout: 30000,
+    retries: 1
+  }
+};
+
+/**
+ * HTTP status helpers
+ */
+export const httpStatus = {
+  isSuccess: (status: number): boolean => status >= 200 && status < 300,
+  isClientError: (status: number): boolean => status >= 400 && status < 500,
+  isServerError: (status: number): boolean => status >= 500 && status < 600,
+  isRedirection: (status: number): boolean => status >= 300 && status < 400
+};
+
+/**
+ * HTTP utilities
+ */
+export const httpUtils = {
+  /**
+   * Build query string from object
+   */
+  buildQueryString(params: Record<string, any>): string {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    return searchParams.toString();
+  },
+
+  /**
+   * Parse query string to object
+   */
+  parseQueryString(queryString: string): Record<string, string> {
+    const params = new URLSearchParams(queryString);
+    const result: Record<string, string> = {};
+    params.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  },
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  /**
+   * Validate URL format
+   */
+  isValidUrl(url: string): boolean {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
+
+<%_ if (config.includeMock) { _%>
+/**
+ * Mock utilities for testing
+ */
+export const mockUtils = {
+  /**
+   * Create mock response
+   */
+  createMockResponse<T>(data: T, status: number = 200): ApiResponse<T> {
+    return {
+      data,
+      status,
+      statusText: 'OK',
+      headers: {},
+      success: true,
+      message: 'Mock response'
+    };
+  },
+
+  /**
+   * Create mock error response
+   */
+  createMockError(message: string, status: number = 400): ErrorResponse {
+    return {
+      success: false,
+      message,
+      error: {
+        code: `MOCK_ERROR_${status}`,
+        message
+      },
+      timestamp: new Date().toISOString()
+    };
+  },
+
+  /**
+   * Simulate network delay
+   */
+  delay(ms: number = 500): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+};
+<%_ } _%>
+
+/**
+ * Default export with common functionality
+ */
+export default {
+  HttpClientFactory,
+  <%- entityName.pascalCase %>ApiService,
+
+  // Auto-generated service exports will be added below
+  // DO NOT MODIFY THIS SECTION MANUALLY - IT'S AUTO-GENERATED
+  // START_GENERATED_DEFAULT_EXPORTS
+
+  // END_GENERATED_DEFAULT_EXPORTS
+
+  httpClients,
+  httpPresets,
+  httpStatus,
+  httpUtils,
+  <%_ if (config.includeMock) { _%>
+  mockUtils
+  <%_ } _%>
+};

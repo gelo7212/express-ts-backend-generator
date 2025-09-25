@@ -1,0 +1,153 @@
+/**
+ * HTTP Client Configuration Interface
+ * Defines the structure for configuring HTTP clients
+ */
+export interface IHttpClientConfig {
+  /** Base URL for all requests */
+  baseUrl: string;
+  
+  /** Request timeout in milliseconds */
+  timeout?: number;
+  
+  /** Number of retry attempts for failed requests */
+  retries?: number;
+  
+  /** Authentication token (Bearer token) */
+  authToken?: string;
+  
+  /** Default headers to include with all requests */
+  defaultHeaders?: Record<string, string>;
+  
+  <%_ if (config.includeRateLimit) { _%>
+  /** Rate limiting configuration */
+  rateLimit?: {
+    maxRequests: number;
+    windowMs: number;
+  };
+  <%_ } _%>
+  
+  <%_ if (config.includeCache) { _%>
+  /** Cache configuration */
+  cache?: {
+    enabled: boolean;
+    ttl: number; // Time to live in milliseconds
+  };
+  <%_ } _%>
+}
+
+/**
+ * Environment-specific HTTP configurations
+ */
+export const HttpConfigs = {
+  development: {
+    <%_ if (config.baseUrl) { _%>
+    <%- entityName.pascalCase %>: {
+      baseUrl: '<%- config.baseUrl %>',
+      timeout: 10000,
+      retries: 1,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Environment': 'development'
+      }
+    } as IHttpClientConfig,
+    <%_ } else { _%>
+    <%- entityName.pascalCase %>: {
+      baseUrl: 'http://localhost:3001/api',
+      timeout: 10000,
+      retries: 1,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Environment': 'development'
+      }
+    } as IHttpClientConfig,
+    <%_ } _%>
+  },
+  
+  testing: {
+    <%- entityName.pascalCase %>: {
+      baseUrl: 'http://localhost:3001/api',
+      timeout: 5000,
+      retries: 0,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Environment': 'testing'
+      }
+    } as IHttpClientConfig,
+  },
+  
+  staging: {
+    <%- entityName.pascalCase %>: {
+      baseUrl: process.env.<%- entityName.snakeCase.toUpperCase() %>_API_URL || 'https://staging-api.<%- entityName.kebabCase %>.com',
+      timeout: 8000,
+      retries: 2,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Environment': 'staging'
+      }
+    } as IHttpClientConfig,
+  },
+  
+  production: {
+    <%- entityName.pascalCase %>: {
+      baseUrl: process.env.<%- entityName.snakeCase.toUpperCase() %>_API_URL || '<%- config.baseUrl || "https://api." + entityName.kebabCase + ".com" %>',
+      timeout: <%- config.timeout || 5000 %>,
+      retries: <%- config.retries || 3 %>,
+      defaultHeaders: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Environment': 'production'
+      },
+      <%_ if (config.includeRateLimit) { _%>
+      rateLimit: {
+        maxRequests: 100,
+        windowMs: 60000 // 1 minute
+      },
+      <%_ } _%>
+      <%_ if (config.includeCache) { _%>
+      cache: {
+        enabled: true,
+        ttl: 300000 // 5 minutes
+      }
+      <%_ } _%>
+    } as IHttpClientConfig,
+  }
+};
+
+/**
+ * Get configuration for current environment
+ */
+export function getHttpConfig(serviceName: string = '<%- entityName.pascalCase %>'): IHttpClientConfig {
+  const env = process.env.NODE_ENV || 'development';
+  const configs = HttpConfigs[env as keyof typeof HttpConfigs];
+  
+  if (!configs || !configs[serviceName as keyof typeof configs]) {
+    throw new Error(`No HTTP configuration found for service "${serviceName}" in environment "${env}"`);
+  }
+  
+  return configs[serviceName as keyof typeof configs];
+}
+
+/**
+ * Create configuration with environment variables override
+ */
+export function createHttpConfig(overrides: Partial<IHttpClientConfig> = {}): IHttpClientConfig {
+  const baseConfig = getHttpConfig();
+  
+  return {
+    ...baseConfig,
+    ...overrides,
+    // Allow environment variables to override specific settings
+    baseUrl: process.env.HTTP_BASE_URL || overrides.baseUrl || baseConfig.baseUrl,
+    timeout: process.env.HTTP_TIMEOUT ? parseInt(process.env.HTTP_TIMEOUT) : (overrides.timeout || baseConfig.timeout),
+    retries: process.env.HTTP_RETRIES ? parseInt(process.env.HTTP_RETRIES) : (overrides.retries || baseConfig.retries),
+    authToken: process.env.HTTP_AUTH_TOKEN || overrides.authToken || baseConfig.authToken,
+    defaultHeaders: {
+      ...baseConfig.defaultHeaders,
+      ...overrides.defaultHeaders
+    }
+  };
+}

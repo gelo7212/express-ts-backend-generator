@@ -11,3 +11,4 @@ export * from './generate-use-case-command';
 export * from './generate-value-object-command';
 export * from './generate-mongodb-lazy-command';
 export * from './generate-mysql-lazy-command';
+export * from './generate-http-command';

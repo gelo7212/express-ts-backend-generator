@@ -1,0 +1,54 @@
+{
+  "name": "http-generator",
+  "type": "http",
+  "templates": [
+    {
+      "name": "http-client-base",
+      "path": "infrastructure/http/http-client.base.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/http-client.base.ts"
+    },
+    {
+      "name": "http-client-factory", 
+      "path": "infrastructure/http/http-client.factory.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/http-client.factory.ts"
+    },
+    {
+      "name": "http-client-config",
+      "path": "infrastructure/http/http-client.config.ts.ejs", 
+      "type": "file",
+      "outputPath": "src/infrastructure/http/http-client.config.ts"
+    },
+    {
+      "name": "api-service-template",
+      "path": "infrastructure/http/services/api-service.template.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/services/{entityName.kebabCase}-api.service.ts"
+    },
+    {
+      "name": "api-types",
+      "path": "infrastructure/http/types/api.types.ts.ejs",
+      "type": "file", 
+      "outputPath": "src/infrastructure/http/types/api.types.ts"
+    },
+    {
+      "name": "api-responses",
+      "path": "infrastructure/http/types/responses.types.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/types/responses.types.ts"
+    },
+    {
+      "name": "http-interceptors",
+      "path": "infrastructure/http/interceptors/index.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/interceptors/index.ts"
+    },
+    {
+      "name": "http-index",
+      "path": "infrastructure/http/index.ts.ejs",
+      "type": "file",
+      "outputPath": "src/infrastructure/http/index.ts"
+    }
+  ]
+}

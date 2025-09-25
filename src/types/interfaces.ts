@@ -135,7 +135,8 @@ export type GeneratorType =
   | 'dto'
   | 'presentation-http'
   | 'mongodb-lazy'
-  | 'mysql-lazy';
+  | 'mysql-lazy'
+  | 'http';
 
 export interface NamingConventions {
   camelCase: string;

@@ -30,6 +30,7 @@ import { ValueObjectGenerator } from '../generators/value-object-generator';
 import { PresentationHttpGenerator } from '../generators/presentation-http-generator';
 import { MongoDbLazyGenerator } from '../generators/mongodb-lazy-generator';
 import { MySqlLazyGenerator } from '../generators/mysql-lazy-generator';
+import { HttpGenerator } from '../generators/http-generator';
 
 // Commands
 import { NewProjectCommand } from '../commands/new-project-command';
@@ -43,6 +44,7 @@ import { GeneratePresentationHttpCommand } from '../commands/generate-presentati
 import { GenerateEntityCommand } from '../commands/generate-entity-command';
 import { GenerateMongoDbLazyCommand } from '../commands/generate-mongodb-lazy-command';
 import { GenerateMySqlLazyCommand } from '../commands/generate-mysql-lazy-command';
+import { GenerateHttpCommand } from '../commands/generate-http-command';
 
 /**
  * Application bootstrapper - sets up dependency injection and registers services
@@ -163,6 +165,10 @@ export class Application {
     factory.registerGenerator('mysql-lazy', 
       new MySqlLazyGenerator(fileSystem, logger, templateEngine, templateRegistry)
     );
+
+    factory.registerGenerator('http', 
+      new HttpGenerator(fileSystem, logger, templateEngine, templateRegistry)
+    );
   }
 
   private async registerCommandServices(): Promise<void> {
@@ -225,6 +231,10 @@ export class Application {
 
     registry.register(
       new GenerateMySqlLazyCommand(this.container, logger, stringUtils, generatorFactory, fileSystem)
+    );
+
+    registry.register(
+      new GenerateHttpCommand(this.container, logger, stringUtils, generatorFactory, fileSystem)
     );
   }
 

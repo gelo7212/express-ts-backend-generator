@@ -1,0 +1,251 @@
+/**
+ * Standard response types for <%- entityName.pascalCase %> API
+ * These types represent the expected structure of API responses
+ */
+
+/**
+ * Base response structure
+ */
+export interface BaseResponse {
+  /** Response timestamp */
+  timestamp: string;
+  /** Request ID for tracking */
+  requestId?: string;
+  /** API version */
+  version?: string;
+}
+
+/**
+ * Success response wrapper
+ */
+export interface SuccessResponse<T = any> extends BaseResponse {
+  /** Success flag */
+  success: true;
+  /** Response data */
+  data: T;
+  /** Optional message */
+  message?: string;
+}
+
+/**
+ * Error response wrapper
+ */
+export interface ErrorResponse extends BaseResponse {
+  /** Success flag */
+  success: false;
+  /** Error message */
+  message: string;
+  /** Error code */
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  /** Validation errors (if applicable) */
+  validationErrors?: ValidationError[];
+}
+
+/**
+ * Validation error structure
+ */
+export interface ValidationError {
+  /** Field name */
+  field: string;
+  /** Error message */
+  message: string;
+  /** Field value that caused the error */
+  value?: any;
+  /** Error code */
+  code?: string;
+}
+
+/**
+ * List response with metadata
+ */
+export interface ListResponse<T = any> extends SuccessResponse<T[]> {
+  /** List metadata */
+  meta: {
+    /** Total number of items */
+    total: number;
+    /** Number of items returned */
+    count: number;
+    /** Current page (if paginated) */
+    page?: number;
+    /** Items per page (if paginated) */
+    perPage?: number;
+    /** Total pages (if paginated) */
+    totalPages?: number;
+    /** Whether there are more pages */
+    hasNext?: boolean;
+    /** Whether there is a previous page */
+    hasPrev?: boolean;
+  };
+}
+
+/**
+ * Created response (for POST requests)
+ */
+export interface CreatedResponse<T = any> extends SuccessResponse<T> {
+  /** Resource location (URL) */
+  location?: string;
+}
+
+/**
+ * Updated response (for PUT/PATCH requests)
+ */
+export interface UpdatedResponse<T = any> extends SuccessResponse<T> {
+  /** Fields that were modified */
+  modifiedFields?: string[];
+}
+
+/**
+ * Deleted response (for DELETE requests)
+ */
+export interface DeletedResponse extends BaseResponse {
+  /** Success flag */
+  success: true;
+  /** Confirmation message */
+  message: string;
+  /** ID of deleted resource */
+  deletedId: string;
+}
+
+<%_ if (config.endpoints && config.endpoints.length > 0) { _%>
+/**
+ * <%- entityName.pascalCase %>-specific response types
+ */
+<%_ config.endpoints.forEach(endpoint => { _%>
+<%_ const responseTypeName = endpoint.name.charAt(0).toUpperCase() + endpoint.name.slice(1).replace(/([A-Z])/g, ' $1').replace(/\s/g, '') + 'Response'; _%>
+
+/**
+ * Response type for <%- endpoint.name %> endpoint
+ */
+export interface <%- responseTypeName %> extends <%- endpoint.method === 'POST' ? 'CreatedResponse' : endpoint.method === 'PUT' || endpoint.method === 'PATCH' ? 'UpdatedResponse' : endpoint.method === 'DELETE' ? 'DeletedResponse' : 'SuccessResponse' %><<%- endpoint.responseType || 'any' %>> {
+  <%_ if (endpoint.description) { _%>
+  /** <%- endpoint.description %> */
+  <%_ } _%>
+}
+<%_ }); _%>
+<%_ } _%>
+
+/**
+ * File upload response
+ */
+export interface FileUploadResponse extends SuccessResponse<{
+  /** File ID */
+  id: string;
+  /** Original filename */
+  filename: string;
+  /** File size in bytes */
+  size: number;
+  /** MIME type */
+  mimeType: string;
+  /** Upload URL */
+  url: string;
+  /** Upload timestamp */
+  uploadedAt: string;
+}> {}
+
+/**
+ * Health check response
+ */
+export interface HealthCheckResponse extends SuccessResponse<{
+  /** Service status */
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  /** Uptime in milliseconds */
+  uptime: number;
+  /** Service version */
+  version: string;
+  /** Dependencies status */
+  dependencies?: {
+    [key: string]: {
+      status: 'healthy' | 'unhealthy';
+      responseTime?: number;
+      lastCheck?: string;
+    };
+  };
+}> {}
+
+/**
+ * Authentication response
+ */
+export interface AuthResponse extends SuccessResponse<{
+  /** Access token */
+  accessToken: string;
+  /** Refresh token */
+  refreshToken?: string;
+  /** Token type (usually 'Bearer') */
+  tokenType: string;
+  /** Token expiration time */
+  expiresIn: number;
+  /** User information */
+  user?: {
+    id: string;
+    email?: string;
+    name?: string;
+    roles?: string[];
+  };
+}> {}
+
+/**
+ * Rate limit response headers
+ */
+export interface RateLimitHeaders {
+  /** Maximum requests allowed */
+  'X-RateLimit-Limit': string;
+  /** Remaining requests */
+  'X-RateLimit-Remaining': string;
+  /** Time when rate limit resets */
+  'X-RateLimit-Reset': string;
+}
+
+/**
+ * Common HTTP status codes and their meanings
+ */
+export const HTTP_STATUS = {
+  // 2xx Success
+  OK: 200,
+  CREATED: 201,
+  ACCEPTED: 202,
+  NO_CONTENT: 204,
+  
+  // 3xx Redirection
+  NOT_MODIFIED: 304,
+  
+  // 4xx Client Errors
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  CONFLICT: 409,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  
+  // 5xx Server Errors
+  INTERNAL_SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504
+} as const;
+
+/**
+ * Type guard to check if response is successful
+ */
+export function isSuccessResponse<T>(response: any): response is SuccessResponse<T> {
+  return response && response.success === true && 'data' in response;
+}
+
+/**
+ * Type guard to check if response is an error
+ */
+export function isErrorResponse(response: any): response is ErrorResponse {
+  return response && response.success === false && 'error' in response;
+}
+
+/**
+ * Type guard to check if response is paginated
+ */
+export function isListResponse<T>(response: any): response is ListResponse<T> {
+  return isSuccessResponse(response) && 'meta' in response && Array.isArray(response.data);
+}

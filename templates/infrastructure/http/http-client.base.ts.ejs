@@ -1,0 +1,333 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { IHttpClientConfig, HttpMethod, ApiResponse, RequestOptions } from './types/api.types';
+<%_ if (config.includeInterceptors) { _%>
+import { requestInterceptor, responseInterceptor, errorInterceptor } from './interceptors';
+<%_ } _%>
+
+// Extend Axios types to include custom properties
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    metadata?: {
+      requestStart?: number;
+      [key: string]: any;
+    };
+  }
+  
+  interface AxiosResponse {
+    duration?: number;
+  }
+}
+
+/**
+ * Base HTTP client using Axios with enterprise-ready features
+ * Supports authentication, retry logic, request/response interceptors, and error handling
+ */
+export class HttpClientBase {
+  private axiosInstance: AxiosInstance;
+  private retryCount: number = 0;
+  
+  constructor(private config: IHttpClientConfig) {
+    this.axiosInstance = this.createAxiosInstance();
+    this.setupInterceptors();
+  }
+
+  /**
+   * Create configured Axios instance
+   */
+  private createAxiosInstance(): AxiosInstance {
+    const instance = axios.create({
+      baseURL: this.config.baseUrl,
+      timeout: this.config.timeout || 5000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...this.config.defaultHeaders
+      }
+    });
+
+    return instance;
+  }
+
+  /**
+   * Setup request/response interceptors
+   */
+  private setupInterceptors(): void {
+    <%_ if (config.includeInterceptors) { _%>
+    // Request interceptor
+    this.axiosInstance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => requestInterceptor(config, this.config),
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor
+    this.axiosInstance.interceptors.response.use(
+      (response) => responseInterceptor(response),
+      (error) => errorInterceptor(error, this.config, this.retryRequest.bind(this))
+    );
+    <%_ } else { _%>
+    // Basic authentication interceptor
+    this.axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      if (this.config.authToken && config.headers) {
+        config.headers.Authorization = `Bearer ${this.config.authToken}`;
+      }
+      return config;
+    });
+    <%_ } _%>
+  }
+
+  /**
+   * Generic request method with full configuration
+   */
+  async request<T = any>(config: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    try {
+      const response: AxiosResponse<T> = await this.axiosInstance.request(config);
+      return this.formatResponse(response);
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  /**
+   * GET request
+   */
+  async get<T = any>(url: string, config?: RequestOptions): Promise<ApiResponse<T>> {
+    return this.request<T>({
+      method: 'GET',
+      url,
+      ...config
+    });
+  }
+
+  /**
+   * POST request
+   */
+  async post<T = any, D = any>(url: string, data?: D, config?: RequestOptions): Promise<ApiResponse<T>> {
+    return this.request<T>({
+      method: 'POST',
+      url,
+      data,
+      ...config
+    });
+  }
+
+  /**
+   * PUT request
+   */
+  async put<T = any, D = any>(url: string, data?: D, config?: RequestOptions): Promise<ApiResponse<T>> {
+    return this.request<T>({
+      method: 'PUT',
+      url,
+      data,
+      ...config
+    });
+  }
+
+  /**
+   * PATCH request
+   */
+  async patch<T = any, D = any>(url: string, data?: D, config?: RequestOptions): Promise<ApiResponse<T>> {
+    return this.request<T>({
+      method: 'PATCH',
+      url,
+      data,
+      ...config
+    });
+  }
+
+  /**
+   * DELETE request
+   */
+  async delete<T = any>(url: string, config?: RequestOptions): Promise<ApiResponse<T>> {
+    return this.request<T>({
+      method: 'DELETE',
+      url,
+      ...config
+    });
+  }
+
+  /**
+   * Upload file with progress tracking
+   */
+  async upload<T = any>(
+    url: string, 
+    file: File | FormData, 
+    onUploadProgress?: (progressEvent: any) => void
+  ): Promise<ApiResponse<T>> {
+    const formData = file instanceof FormData ? file : new FormData();
+    if (file instanceof File) {
+      formData.append('file', file);
+    }
+
+    return this.request<T>({
+      method: 'POST',
+      url,
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      onUploadProgress
+    });
+  }
+
+  /**
+   * Download file
+   */
+  async download(url: string, filename?: string): Promise<void> {
+    try {
+      const response = await this.axiosInstance({
+        method: 'GET',
+        url,
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename || this.extractFilenameFromResponse(response);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  /**
+   * Set authentication token
+   */
+  setAuthToken(token: string): void {
+    this.config.authToken = token;
+  }
+
+  /**
+   * Remove authentication token
+   */
+  clearAuthToken(): void {
+    this.config.authToken = undefined;
+  }
+
+  /**
+   * Update base URL
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.config.baseUrl = baseUrl;
+    this.axiosInstance.defaults.baseURL = baseUrl;
+  }
+
+  /**
+   * Get current configuration
+   */
+  getConfig(): IHttpClientConfig {
+    return { ...this.config };
+  }
+
+  /**
+   * Format successful response
+   */
+  private formatResponse<T>(response: AxiosResponse<T>): ApiResponse<T> {
+    return {
+      data: response.data,
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      success: true,
+      message: 'Request completed successfully'
+    };
+  }
+
+  /**
+   * Handle and format errors
+   */
+  private handleError(error: AxiosError): Error {
+    if (error.response) {
+      // Server responded with error status
+      const responseData = error.response.data as any;
+      const message = responseData?.message || error.response.statusText || 'Request failed';
+      const customError = new Error(message) as any;
+      customError.status = error.response.status;
+      customError.data = error.response.data;
+      customError.success = false;
+      return customError;
+    } else if (error.request) {
+      // Request was made but no response received
+      return new Error('Network error: No response received from server');
+    } else {
+      // Something else happened
+      return new Error(`Request setup error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Retry failed request with exponential backoff
+   */
+  private async retryRequest(originalConfig: AxiosRequestConfig): Promise<AxiosResponse> {
+    const maxRetries = this.config.retries || 3;
+    const delay = Math.pow(2, this.retryCount) * 1000; // Exponential backoff
+    
+    if (this.retryCount >= maxRetries) {
+      this.retryCount = 0;
+      throw new Error('Maximum retry attempts reached');
+    }
+
+    this.retryCount++;
+    
+    // Wait before retrying
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    return this.axiosInstance.request(originalConfig);
+  }
+
+  /**
+   * Extract filename from response headers
+   */
+  private extractFilenameFromResponse(response: AxiosResponse): string {
+    const contentDisposition = response.headers['content-disposition'];
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        return filenameMatch[1];
+      }
+    }
+    return 'download';
+  }
+
+  <%_ if (config.includeCache) { _%>
+  /**
+   * Cache management (if caching is enabled)
+   */
+  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+  /**
+   * Get cached response
+   */
+  private getCachedResponse(key: string): any | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  /**
+   * Set cached response
+   */
+  private setCachedResponse(key: string, data: any, ttl: number = 300000): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    });
+  }
+
+  /**
+   * Clear cache
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+  <%_ } _%>
+}

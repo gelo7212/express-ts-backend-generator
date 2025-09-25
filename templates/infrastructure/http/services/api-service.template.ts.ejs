@@ -1,0 +1,274 @@
+import { HttpClientFactory } from '../http-client.factory';
+import { HttpClientBase } from '../http-client.base';
+import { getHttpConfig } from '../http-client.config';
+import {
+  ApiResponse,
+  PaginatedResponse,
+  PaginationParams,
+  RequestOptions,
+  <%_ if (config.endpoints && config.endpoints.length > 0) { _%>
+  <%- entityName.uppercase %>_ENDPOINTS,
+  <%_ } _%>
+} from '../types/api.types';
+
+<%_ if (config.endpoints && config.endpoints.length > 0) { _%>
+/**
+ * <%- entityName.pascalCase %> data interface
+ */
+export interface <%- entityName.pascalCase %>Data {
+  id?: string;
+  // Add your specific <%- entityName.kebabCase %> properties here
+  name?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * <%- entityName.pascalCase %> creation data interface
+ */
+export interface Create<%- entityName.pascalCase %>Data {
+  // Add required fields for creating <%- entityName.kebabCase %>
+  name: string;
+  description?: string;
+}
+
+/**
+ * <%- entityName.pascalCase %> update data interface
+ */
+export interface Update<%- entityName.pascalCase %>Data {
+  // Add updatable fields for <%- entityName.kebabCase %>
+  name?: string;
+  description?: string;
+}
+
+/**
+ * <%- entityName.pascalCase %> query parameters
+ */
+export interface <%- entityName.pascalCase %>QueryParams extends PaginationParams {
+  // Add specific query parameters for <%- entityName.kebabCase %>
+  search?: string;
+  status?: string;
+  category?: string;
+}
+<%_ } _%>
+
+/**
+ * <%- entityName.pascalCase %> API Service
+ * Provides methods to interact with the <%- entityName.kebabCase %> API
+ * 
+ * @example
+ * ```typescript
+ * const apiService = new <%- entityName.pascalCase %>ApiService(httpClientFactory);
+ * 
+ * // Get all items
+ * const items = await apiService.getAll();
+ * 
+ * // Get item by ID
+ * const item = await apiService.getById('123');
+ * 
+ * // Create new item
+ * const newItem = await apiService.create({ name: 'New Item' });
+ * ```
+ */
+export class <%- entityName.pascalCase %>ApiService {
+  private httpClient: HttpClientBase;
+
+  constructor(private httpClientFactory: HttpClientFactory) {
+    const config = getHttpConfig('<%- entityName.pascalCase %>');
+    this.httpClient = httpClientFactory.getOrCreateClient('<%- entityName.kebabCase %>', config);
+  }
+
+  <%_ if (config.endpoints && config.endpoints.length > 0) { _%>
+  <%_ config.endpoints.forEach(endpoint => { _%>
+  <%_ const methodName = endpoint.name; _%>
+  <%_ const isGetMethod = endpoint.method === 'GET'; _%>
+  <%_ const isPostMethod = endpoint.method === 'POST'; _%>
+  <%_ const isPutMethod = endpoint.method === 'PUT'; _%>
+  <%_ const isPatchMethod = endpoint.method === 'PATCH'; _%>
+  <%_ const isDeleteMethod = endpoint.method === 'DELETE'; _%>
+  
+  /**
+   * <%- endpoint.description || endpoint.name.charAt(0).toUpperCase() + endpoint.name.slice(1) %>
+   * <%- endpoint.method %> <%- endpoint.path %>
+   */
+  async <%- methodName %>(
+    <%_ if (endpoint.path.includes(':id') || endpoint.path.includes('{id}')) { _%>
+    id: string,
+    <%_ } _%>
+    <%_ if (isPostMethod || isPutMethod || isPatchMethod) { _%>
+    data: <%- isPostMethod ? 'Create' + entityName.pascalCase + 'Data' : 'Update' + entityName.pascalCase + 'Data' %>,
+    <%_ } _%>
+    <%_ if (isGetMethod && methodName.includes('getAll')) { _%>
+    params?: <%- entityName.pascalCase %>QueryParams,
+    <%_ } else if (isGetMethod && !endpoint.path.includes(':id') && !endpoint.path.includes('{id}')) { _%>
+    params?: Record<string, any>,
+    <%_ } _%>
+    options?: RequestOptions
+  ): Promise<ApiResponse<any>> {
+    <%_ let path = endpoint.path; _%>
+    <%_ if (path.includes(':id')) { path = path.replace(':id', '${id}'); } _%>
+    <%_ if (path.includes('{id}')) { path = path.replace('{id}', '${id}'); } _%>
+    const url = `<%- path %>`;
+    
+    <%_ if (isGetMethod) { _%>
+    return this.httpClient.get(url, {
+      <%_ if (methodName.includes('getAll') || (!endpoint.path.includes(':id') && !endpoint.path.includes('{id}'))) { _%>
+      params,
+      <%_ } _%>
+      ...options
+    });
+    <%_ } else if (isPostMethod) { _%>
+    return this.httpClient.post(url, data, options);
+    <%_ } else if (isPutMethod) { _%>
+    return this.httpClient.put(url, data, options);
+    <%_ } else if (isPatchMethod) { _%>
+    return this.httpClient.patch(url, data, options);
+    <%_ } else if (isDeleteMethod) { _%>
+    return this.httpClient.delete(url, options);
+    <%_ } _%>
+  }
+  <%_ }); _%>
+  <%_ } else { _%>
+  
+  /**
+   * Get all <%- entityName.kebabCase %> items
+   */
+  async getAll(params?: PaginationParams, options?: RequestOptions): Promise<ApiResponse<any[]>> {
+    return this.httpClient.get('/<%- entityName.kebabCase %>', {
+      params,
+      ...options
+    });
+  }
+
+  /**
+   * Get <%- entityName.kebabCase %> by ID
+   */
+  async getById(id: string, options?: RequestOptions): Promise<ApiResponse<any>> {
+    return this.httpClient.get(`/<%- entityName.kebabCase %>/${id}`, options);
+  }
+
+  /**
+   * Create new <%- entityName.kebabCase %>
+   */
+  async create(data: any, options?: RequestOptions): Promise<ApiResponse<any>> {
+    return this.httpClient.post('/<%- entityName.kebabCase %>', data, options);
+  }
+
+  /**
+   * Update <%- entityName.kebabCase %>
+   */
+  async update(id: string, data: any, options?: RequestOptions): Promise<ApiResponse<any>> {
+    return this.httpClient.put(`/<%- entityName.kebabCase %>/${id}`, data, options);
+  }
+
+  /**
+   * Partially update <%- entityName.kebabCase %>
+   */
+  async patch(id: string, data: any, options?: RequestOptions): Promise<ApiResponse<any>> {
+    return this.httpClient.patch(`/<%- entityName.kebabCase %>/${id}`, data, options);
+  }
+
+  /**
+   * Delete <%- entityName.kebabCase %>
+   */
+  async delete(id: string, options?: RequestOptions): Promise<ApiResponse<any>> {
+    return this.httpClient.delete(`/<%- entityName.kebabCase %>/${id}`, options);
+  }
+
+  /**
+   * Search <%- entityName.kebabCase %> items
+   */
+  async search(query: string, params?: PaginationParams, options?: RequestOptions): Promise<ApiResponse<any[]>> {
+    return this.httpClient.get('/<%- entityName.kebabCase %>/search', {
+      params: { q: query, ...params },
+      ...options
+    });
+  }
+  <%_ } _%>
+
+  /**
+   * Upload file
+   */
+  async uploadFile(
+    file: File | FormData,
+    onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void,
+    options?: RequestOptions
+  ): Promise<ApiResponse<{ id: string; url: string; filename: string }>> {
+    return this.httpClient.upload('/<%- entityName.kebabCase %>/upload', file, onProgress);
+  }
+
+  /**
+   * Download file
+   */
+  async downloadFile(id: string, filename?: string): Promise<void> {
+    return this.httpClient.download(`/<%- entityName.kebabCase %>/${id}/download`, filename);
+  }
+
+  /**
+   * Health check
+   */
+  async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
+    return this.httpClient.get('/health');
+  }
+
+  <%_ if (config.includeCache) { _%>
+  /**
+   * Clear cache
+   */
+  clearCache(): void {
+    this.httpClient.clearCache();
+  }
+  <%_ } _%>
+
+  /**
+   * Set authentication token
+   */
+  setAuthToken(token: string): void {
+    this.httpClient.setAuthToken(token);
+  }
+
+  /**
+   * Clear authentication token
+   */
+  clearAuthToken(): void {
+    this.httpClient.clearAuthToken();
+  }
+
+  /**
+   * Update base URL
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.httpClient.setBaseUrl(baseUrl);
+  }
+
+  /**
+   * Get current configuration
+   */
+  getConfig() {
+    return this.httpClient.getConfig();
+  }
+
+  <%_ if (config.includeMock) { _%>
+  /**
+   * Enable mock mode for testing
+   */
+  enableMockMode(): void {
+    const mockConfig = {
+      ...this.httpClient.getConfig(),
+      baseUrl: 'http://localhost:3000/mock',
+      timeout: 1000
+    };
+    
+    this.httpClient = this.httpClientFactory.createClient('<%- entityName.kebabCase %>-mock', mockConfig);
+  }
+
+  /**
+   * Disable mock mode
+   */
+  disableMockMode(): void {
+    const config = getHttpConfig('<%- entityName.pascalCase %>');
+    this.httpClient = this.httpClientFactory.getOrCreateClient('<%- entityName.kebabCase %>', config);
+  }
+  <%_ } _%>
+}

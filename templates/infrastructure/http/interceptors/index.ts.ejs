@@ -1,0 +1,306 @@
+import { AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { IHttpClientConfig } from '../types/api.types';
+
+// Extend Axios types to include custom properties  
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    metadata?: {
+      requestStart?: number;
+      [key: string]: any;
+    };
+  }
+  
+  interface AxiosResponse {
+    duration?: number;
+  }
+}
+
+// Extend Axios types to include custom metadata
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    metadata?: {
+      requestStart?: number;
+      [key: string]: any;
+    };
+  }
+  
+  interface AxiosResponse {
+    duration?: number;
+  }
+}
+
+<%_ if (config.includeRateLimit) { _%>
+/**
+ * Rate limiting state
+ */
+interface RateLimitState {
+  requests: number[];
+  windowStart: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitState>();
+<%_ } _%>
+
+/**
+ * Request interceptor
+ * Handles authentication, logging, and request preprocessing
+ */
+export function requestInterceptor(
+  config: InternalAxiosRequestConfig,
+  clientConfig: IHttpClientConfig
+): InternalAxiosRequestConfig {
+  // Add timestamp to requests
+  const requestStart = Date.now();
+  config.metadata = { requestStart };
+
+  // Add authentication if available
+  if (clientConfig.authToken && config.headers && !config.headers.Authorization) {
+    <%_ if (config.authType === 'bearer') { _%>
+    config.headers.Authorization = `Bearer ${clientConfig.authToken}`;
+    <%_ } else if (config.authType === 'api-key') { _%>
+    config.headers['X-API-Key'] = clientConfig.authToken;
+    <%_ } else if (config.authType === 'basic') { _%>
+    config.headers.Authorization = `Basic ${btoa(clientConfig.authToken)}`;
+    <%_ } _%>
+  }
+
+  // Add request ID for tracking
+  if (config.headers) {
+    config.headers['X-Request-ID'] = generateRequestId();
+  }
+
+  <%_ if (config.includeRateLimit) { _%>
+  // Rate limiting check
+  if (clientConfig.rateLimit) {
+    const baseUrl = clientConfig.baseUrl;
+    const now = Date.now();
+    const windowMs = clientConfig.rateLimit.windowMs;
+    const maxRequests = clientConfig.rateLimit.maxRequests;
+
+    let state = rateLimitMap.get(baseUrl);
+    if (!state) {
+      state = { requests: [], windowStart: now };
+      rateLimitMap.set(baseUrl, state);
+    }
+
+    // Clean old requests outside the window
+    state.requests = state.requests.filter(time => now - time < windowMs);
+
+    // Check if we've exceeded the rate limit
+    if (state.requests.length >= maxRequests) {
+      const oldestRequest = Math.min(...state.requests);
+      const timeToWait = windowMs - (now - oldestRequest);
+      throw new Error(`Rate limit exceeded. Try again in ${Math.ceil(timeToWait / 1000)} seconds.`);
+    }
+
+    // Add current request to the list
+    state.requests.push(now);
+  }
+  <%_ } _%>
+
+  // Log request (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🚀 HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      headers: config.headers,
+      params: config.params,
+      data: config.data
+    });
+  }
+
+  return config;
+}
+
+/**
+ * Response interceptor
+ * Handles response processing and logging
+ */
+export function responseInterceptor(response: AxiosResponse): AxiosResponse {
+  // Calculate request duration
+  const requestStart = response.config.metadata?.requestStart;
+  const duration = requestStart ? Date.now() - requestStart : 0;
+
+  // Add duration to response
+  response.duration = duration;
+
+  // Log response (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`✅ HTTP Response: ${response.status} ${response.statusText} (${duration}ms)`, {
+      url: response.config.url,
+      status: response.status,
+      headers: response.headers,
+      data: response.data
+    });
+  }
+
+  // Transform response if needed
+  if (response.data && typeof response.data === 'object') {
+    // Add metadata to response
+    response.data._meta = {
+      status: response.status,
+      statusText: response.statusText,
+      duration,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  return response;
+}
+
+/**
+ * Error interceptor
+ * Handles error processing, logging, and retry logic
+ */
+export function errorInterceptor(
+  error: AxiosError,
+  clientConfig: IHttpClientConfig,
+  retryRequest: (config: AxiosRequestConfig) => Promise<AxiosResponse>
+): Promise<any> {
+  const originalRequest = error.config as any;
+
+  // Log error (always)
+  console.error('❌ HTTP Error:', {
+    url: originalRequest?.url,
+    method: originalRequest?.method,
+    status: error.response?.status,
+    statusText: error.response?.statusText,
+    message: error.message,
+    data: error.response?.data
+  });
+
+  // Handle specific error types
+  if (error.response) {
+    const status = error.response.status;
+    
+    // Handle authentication errors
+    if (status === 401) {
+      // Clear token and trigger re-authentication
+      console.warn('🔒 Authentication failed. Token may be expired.');
+      // Emit event for token refresh or redirect to login
+      // This could trigger a custom event or callback
+    }
+    
+    // Handle rate limiting
+    if (status === 429) {
+      const retryAfter = error.response.headers['retry-after'];
+      if (retryAfter) {
+        console.warn(`⏱️ Rate limited. Retry after ${retryAfter} seconds.`);
+      }
+    }
+    
+    // Handle server errors with retry logic
+    if (status >= 500 && clientConfig.retries && originalRequest._retryCount < clientConfig.retries) {
+      return handleRetry(originalRequest, clientConfig, retryRequest);
+    }
+  } else if (error.request) {
+    // Network error - retry if configured
+    if (clientConfig.retries && originalRequest._retryCount < clientConfig.retries) {
+      return handleRetry(originalRequest, clientConfig, retryRequest);
+    }
+  }
+
+  // Transform error for consistent error handling
+  const transformedError = {
+    message: error.message,
+    status: error.response?.status,
+    statusText: error.response?.statusText,
+    data: error.response?.data,
+    success: false,
+    originalError: error
+  };
+
+  return Promise.reject(transformedError);
+}
+
+/**
+ * Handle retry logic with exponential backoff
+ */
+async function handleRetry(
+  originalRequest: any,
+  clientConfig: IHttpClientConfig,
+  retryRequest: (config: AxiosRequestConfig) => Promise<AxiosResponse>
+): Promise<AxiosResponse> {
+  originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+  
+  const retryDelay = Math.pow(2, originalRequest._retryCount - 1) * 1000; // Exponential backoff
+  
+  console.warn(`🔄 Retrying request (attempt ${originalRequest._retryCount}/${clientConfig.retries}) after ${retryDelay}ms delay`);
+  
+  // Wait before retrying
+  await new Promise(resolve => setTimeout(resolve, retryDelay));
+  
+  return retryRequest(originalRequest);
+}
+
+/**
+ * Generate unique request ID
+ */
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+<%_ if (config.includeCache) { _%>
+/**
+ * Cache key generator
+ */
+export function generateCacheKey(config: AxiosRequestConfig): string {
+  const { method, url, params, data } = config;
+  const key = `${method}_${url}_${JSON.stringify(params)}_${JSON.stringify(data)}`;
+  return btoa(key).replace(/[+/=]/g, ''); // Base64 encode and remove special chars
+}
+
+/**
+ * Check if request should be cached
+ */
+export function shouldCacheRequest(config: AxiosRequestConfig): boolean {
+  // Only cache GET requests by default
+  return config.method?.toLowerCase() === 'get';
+}
+
+/**
+ * Extract cache TTL from response headers
+ */
+export function extractCacheTTL(response: AxiosResponse): number {
+  const cacheControl = response.headers['cache-control'];
+  if (cacheControl) {
+    const maxAgeMatch = cacheControl.match(/max-age=(\d+)/);
+    if (maxAgeMatch) {
+      return parseInt(maxAgeMatch[1]) * 1000; // Convert to milliseconds
+    }
+  }
+  
+  // Default TTL (5 minutes)
+  return 5 * 60 * 1000;
+}
+<%_ } _%>
+
+/**
+ * Security headers interceptor
+ */
+export function addSecurityHeaders(config: AxiosRequestConfig): AxiosRequestConfig {
+  if (!config.headers) {
+    config.headers = {};
+  }
+
+  // Add security headers
+  config.headers['X-Requested-With'] = 'XMLHttpRequest';
+  config.headers['Cache-Control'] = 'no-cache';
+  
+  // Add CSRF token if available
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  if (csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken;
+  }
+
+  return config;
+}
+
+/**
+ * Request timeout handler
+ */
+export function handleTimeout(config: AxiosRequestConfig, defaultTimeout: number = 5000): AxiosRequestConfig {
+  if (!config.timeout) {
+    config.timeout = defaultTimeout;
+  }
+  
+  return config;
+}
